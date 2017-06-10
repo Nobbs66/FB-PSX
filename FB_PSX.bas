@@ -7,26 +7,24 @@ Using fb
 #Include Once "debugger.bi"
 
 loadBIOS
-For i As Integer = 0 To &hFF
+'This is for testing only. 
+For i As Integer = 0 To &h7FFFF
 	cpu.memory(i) = cpu.bios(i)
 Next
 
 
 If cpu.bios(0) = &h13 Then ScreenRes(640,480,32)
 Do 
-	
 
 fetchInstruction
 decodeInstruction
-Print Hex(cpu.opcode)
-Print cpu.Operation & ": " & Hex(RT) & ", " & Hex(imm) 
+Print "Bytes: " & Hex(cpu.memory(cpu.current_PC)) & " " & Hex(cpu.memory(cpu.current_PC+1)) & " " & Hex(cpu.memory(cpu.current_PC+2)) & " " & Hex(cpu.memory(cpu.current_PC+3)) 
+Print "Instruction: " & Hex(cpu.opcode)
+Print "Operands: " & cpu.Operation & ": " & Hex(RS) & ", " & Hex(RT) & ", " & Hex(imm) 
+Print ""
 cpu.current_PC+=4
-fetchInstruction
-decodeInstruction
-Print Hex(cpu.opcode)
-Print cpu.Operation & ": " & Hex(RS) & ", " & Hex(RT) & ", " & Hex(imm) 
-'cpu.Operation = "NO OP"
 If MultiKey(SC_M) Then memoryModify  
-If cpu.current_PC >= &hFF Then cpu.current_PC = 0 
-Loop While Not MultiKey(SC_ENTER)
+'If cpu.current_PC >= &hFF Then cpu.current_PC = 0 
+Sleep 100
+Loop While Not MultiKey(SC_ESCAPE)
 Sleep
