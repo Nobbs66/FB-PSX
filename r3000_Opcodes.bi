@@ -76,7 +76,7 @@ Declare Sub CPU_MFC0 'MFCz
 Declare Sub CPU_MFC2 'MFCz
 Declare Sub CPU_MTC0 'MTCz
 Declare Sub CPU_MTC2 'MTCz
-Declare Sub CPU_SWCz
+Declare Sub CPU_SWC2
 Declare Sub decode_instruction
 
 Sub CPU_ADD
@@ -262,6 +262,10 @@ Sub CPU_MULT
 	
 End Sub
 
+Sub CPU_MULTU
+	
+End Sub
+
 Sub CPU_NOR 'Maybe correct????
 	Dim As UInteger tRD = (RD xor &hFFFFFFFF)
 	Dim As UInteger tRT = (RT Xor &hFFFFFFFF)
@@ -273,6 +277,13 @@ Sub CPU_OR
 End Sub
 Sub CPU_ORI
 	cpu.GPR(RT)= cpu.GPR(RS) Or imm
+End Sub
+Sub CPU_SB
+	
+End Sub
+
+Sub CPU_SH
+	
 End Sub
 Sub CPU_SLL
 	cpu.GPR(RD) = cpu.GPR(RT) Shl SA
@@ -317,6 +328,22 @@ End Sub
 Sub CPU_SUBU
 	cpu.GPR(RD) = cpu.GPR(RS) - cpu.GPR(RT)
 End Sub
+
+Sub CPU_SW
+	
+End Sub
+
+Sub CPU_SWC2
+	
+End Sub
+
+Sub CPU_SWL
+	
+End Sub
+
+Sub CPU_SWR
+	
+End Sub
 Sub CPU_SYSCALL
 	Dim As UInteger code = ((cpu.opcode Shr 6) And &hFFFFF)
 	Exception(code,0)
@@ -329,11 +356,30 @@ Sub CPU_XORI
 End Sub
 
 Sub decodeInstruction
-	'Must stop working on this or Blyss won't have any work to do...
-
 	Select Case (cpu.opcode Shr 26)
 		Case &h0 'Special
 			Select Case(cpu.opcode And &h3F)
+				Case &h0
+					cpu.operation = "SLL"
+					CPU_SLL
+				Case &h2
+					cpu.operation = "SRL"
+					CPU_SRL
+				Case &h3
+					cpu.operation = "SRA"
+					CPU_SRA
+				Case &h4
+					cpu.operation = "SLLV"
+					CPU_SLLV
+				Case &h6
+					cpu.operation = "SRLV"
+					CPU_SRLV
+				Case &h7
+					cpu.operation = "SRAV"
+					CPU_SRAV
+				Case &hc
+					cpu.operation = "SYSCALL"
+					CPU_SYSCALL
 				Case &h20
 					cpu.Operation = "ADD"
 					CPU_ADD
@@ -373,6 +419,30 @@ Sub decodeInstruction
 				Case &h18
 					cpu.operation = "MULT"
 					CPU_MULT
+				Case &h19
+					cpu.operation = "MULTU"
+					CPU_MULTU
+				Case &h22
+					cpu.operation = "SUB"
+					CPU_SUB
+				Case &H23
+					cpu.operation = "SUBU"
+					CPU_SUBU
+				Case &h25
+					cpu.operation = "OR"
+					CPU_OR
+				Case &h26
+					cpu.operation = "XOR"
+					CPU_XOR
+				Case &h27
+					cpu.operation = "NOR"
+					CPU_NOR
+				Case &h2A
+					cpu.operation = "SLT"
+					CPU_SLT
+				Case &h2B
+					cpu.operation = "SLTU"
+					CPU_SLTU
 			End Select
 		Case &h1 'REGIMM = 000001
 			Select Case ((cpu.opcode Shr 16) And &H1F)
@@ -407,11 +477,21 @@ Sub decodeInstruction
 		Case &h7
 			cpu.operation = "BGTZ"
 			CPU_BGTZ
+		Case &hA
+			cpu.operation = "SLTI"
+			CPU_SLTI
+		Case &HB
+			cpu.operation = "SLTIU"
+			CPU_SLTIU
 		Case &hc
 			cpu.operation = "ANDI"
 			CPU_ANDI
 		Case &hD
 			cpu.Operation = "ORI"
+			CPU_ORI
+		Case &he
+			cpu.operation = "XORI"
+			CPU_XORI
 		Case &hF
 			cpu.operation  = "LUI"
 			CPU_LUI
@@ -480,9 +560,27 @@ Sub decodeInstruction
 		Case &h26
 			cpu.operation = "LWR"
 			CPU_LWR
+		Case &h28
+			cpu.operation = "SB"
+			CPU_SB
+		Case &h2B
+			cpu.operation = "SW"
+			CPU_SW
+		Case &h29
+			cpu.operation = "SH"
+			CPU_SH
+		Case &h2A
+			cpu.operation = "SWL"
+			CPU_SWL
+		Case &h2e
+			cpu.operation = "SWR"
+			CPU_SWR
 		Case &h32
 			cpu.operation = "LWC2"
 			CPU_LWC2
+		Case &h3A
+			cpu.operation = "SWC2"
+			CPU_SWC2
 	End Select
 End Sub
 
