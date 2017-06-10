@@ -138,37 +138,18 @@ End Sub
 Sub CPU_BREAK
 	'Breakpoint Exception
 End Sub
-Sub CPU_CFC1
-
-End Sub
 
 Sub CPU_CFC2
-
-End Sub
-
-Sub CPU_CFC3
-
+	cpu.GPR(RT) = gte.gc(RD)
 End Sub
 Sub CPU_COP0
-
-End Sub
-Sub CPU_COP1
 
 End Sub
 Sub CPU_COP2
 
 End Sub
-Sub CPU_COP3
-
-End Sub
-Sub CPU_CTC1
-	
-End Sub
 Sub CPU_CTC2
-	
-End Sub
-Sub CPU_CTC3
-
+	gte.gc(RD) = cpu.GPR(RT)
 End Sub
 Sub CPU_DIV
 
@@ -194,27 +175,65 @@ Sub CPU_JR
 End Sub
 
 Sub CPU_LB
-	
+	Dim As Integer temp = Offset + cpu.GPR(RS) 'RS shares the same position with base
+	Dim As Integer value = ReadByte(temp)
+	cpu.GPR(RT) = value
 End Sub
 
 Sub CPU_LBU
-	
+	Dim As Integer temp = Offset + cpu.GPR(RS)
+	cpu.GPR(RT) = ReadByte(temp)
 End Sub
 
 Sub CPU_LH
-	
+	Dim As Integer temp = Offset 
+	temp += cpu.GPR(RS)
+	Dim As Byte test = temp And 1
+	Dim load As integer
+	For i As uInteger = 0 To 1
+	load Or= (cpu.memory(temp+i) Shl i*8)
+	Next
+	If test = 0 Then cpu.GPR(RT) = load
 End Sub
 
 Sub CPU_LHU
-	
+	Dim As Integer temp = Offset 
+	temp += cpu.GPR(RS)
+	Dim As Byte test = temp And 1
+	Dim load As uinteger
+	For i As uInteger = 0 To 1
+	load Or= (cpu.memory(temp+i) Shl i*8)
+	Next
+	If test = 0 Then cpu.GPR(RT) = load
+End Sub
+
+Sub CPU_LUI
+	cpu.GPR(RT) = 0 
+	cpu.GPR(RS) or= (imm Shl 16)
 End Sub
 
 Sub CPU_LW
-	
+	Dim As Integer temp = Offset 
+	temp += cpu.GPR(RS)
+	Dim As Byte test = temp And 1
+	cpu.GPR(RT) = 0 
+	Dim load As integer
+	For i As Integer = 0 To 3
+	load Or= (cpu.memory(temp+i) Shl i*8)
+	Next
+	cpu.GPR(RT) = load
 End Sub
 
 Sub CPU_LWC2
-	
+	Dim As Integer temp = Offset 
+	temp += cpu.GPR(RS)
+	Dim As Byte test = temp And 1
+	cpu.GPR(RT) = 0 
+	Dim load As integer
+	For i As Integer = 0 To 3
+	load Or= (cpu.memory(temp+i) Shl i*8)
+	Next
+	gte.gd(RT) = load
 End Sub
 
 Sub CPU_LWL
@@ -225,40 +244,36 @@ Sub CPU_LWR
 	
 End Sub
 
-Sub CPU_LUI
-	cpu.GPR(RT) = 0 
-	cpu.GPR(RS) or= (imm Shl 16)
-End Sub
 
 Sub CPU_MFC0
-	
+	cpu.GPR(RT) = cop0.reg(RD)
 End Sub
 
 Sub CPU_MFC2
-	
+	cpu.GPR(RT) = gte.gd(RD)
 End Sub
 
 Sub CPU_MFHI
-
+	cpu.GPR(RD) = cpu.HI
 End Sub
 
 Sub CPU_MFLO
-
+	cpu.GPR(RD) = cpu.HI
 End Sub
 
 Sub CPU_MTC0
-	
+	cop0.reg(RD) = cpu.GPR(RT)
 End Sub
 Sub CPU_MTC2
-		
+	gte.gd(RD) = cpu.GPR(RT)	
 End Sub
 
 Sub CPU_MTHI
-
+	cpu.HI = cpu.GPR(RS)
 End Sub
 
 Sub CPU_MTLO
-
+	cpu.LO = cpu.GPR(RS)
 End Sub
 
 Sub CPU_MULT
@@ -282,11 +297,22 @@ Sub CPU_ORI
 	cpu.GPR(RT)= cpu.GPR(RS) Or imm
 End Sub
 Sub CPU_SB
-	
+	Dim As Integer temp = Offset 
+	temp += cpu.GPR(RS) 'RS shares the same position with base
+	Dim As Integer value = cpu.GPR(RT) And &hFF
+	WriteByte(temp,value)
 End Sub
 
 Sub CPU_SH
-	
+	'I'm not confident with this one
+	Dim As Integer temp = Offset 
+	temp += cpu.GPR(RS)
+	Dim As Byte test = temp And 1
+	Dim load As Byte
+	load = cpu.GPR(RT) And &hFF
+	If test = 0 Then WriteByte(temp,load)
+	load = ((cpu.GPR(RT) Shr 8) And &hFF)
+	If test = 0 Then WriteByte(temp+1,load)
 End Sub
 Sub CPU_SLL
 	cpu.GPR(RD) = cpu.GPR(RT) Shl SA
@@ -333,7 +359,16 @@ Sub CPU_SUBU
 End Sub
 
 Sub CPU_SW
-	
+	'I'm not confident with this one
+	Dim As Integer temp = Offset 
+	temp += cpu.GPR(RS)
+	Dim As Byte test = temp And 1
+	Dim load As Byte
+	load = cpu.GPR(RT) And &hFF
+	For i As Integer = 0 To 3
+		load = ((cpu.GPR(RT) Shr i*8) And &hFF)
+		WriteByte(temp+i,load)
+	Next
 End Sub
 
 Sub CPU_SWC2

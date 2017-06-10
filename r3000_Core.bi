@@ -2,8 +2,8 @@ Declare Sub Check_Overflow
 Declare Sub loadBIOS
 Declare Sub validBIOS
 Declare Sub initCPU
-Declare Function Write32(ByVal addr As UInteger, ByVal value As UByte) As UInteger
-Declare function Read32(ByVal addr As UInteger) As UInteger
+Declare Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As UInteger
+Declare function ReadByte(ByVal addr As UInteger) As UInteger
 Type cpus
 	memory(&h200000) As UByte
 	iCache(&hFFF) As ubyte
@@ -73,7 +73,7 @@ End Sub
 Sub Check_Overflow
 	
 End Sub
-Function Write32(ByVal addr As UInteger, ByVal value As UByte) As uinteger
+Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As uinteger
 	'Memory is split into a few different regions
 	Select Case addr
 		Case &h0 To &h1FFFFF
@@ -87,7 +87,7 @@ Function Write32(ByVal addr As UInteger, ByVal value As UByte) As uinteger
 	End Select
 	return 0 
 End Function
-function Read32(ByVal addr As UInteger) As UInteger
+function ReadByte(ByVal addr As UInteger) As UInteger
 		'Memory is split into a few different regions
 		dim value as ubyte 
 	Select Case addr

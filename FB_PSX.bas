@@ -3,6 +3,7 @@ Using fb
 #Include Once "file.bi"
 #Include Once "r3000_Core.bi"
 #Include Once "r3000_cop0.bi"
+#Include Once "gte.bi"
 #Include Once "r3000_opcodes.bi"
 #Include Once "debugger.bi"
 
@@ -19,5 +20,6 @@ Print Hex(cpu.current_PC)
 Print "Operands: " & cpu.Operation & ": " & Hex(RS) & ", " & Hex(RT) & ", " & Hex(imm) 
 Print ""
 cpu.current_PC+=4
+Sleep 100
 Loop While Not MultiKey(SC_ESCAPE)
 
