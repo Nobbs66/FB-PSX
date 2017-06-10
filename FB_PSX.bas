@@ -1,10 +1,9 @@
 #Include Once "fbgfx.bi"
+Using fb
 #Include Once "file.bi"
 #Include Once "r3000_Core.bi"
 #Include Once "r3000_cop0.bi"
 #Include Once "r3000_opcodes.bi"
-
-Using fb
 #Include Once "debugger.bi"
 
 loadBIOS

@@ -44,43 +44,7 @@ Sub fetchInstruction 'Copies 4 bytes to a 32-bit opcode variable
 	cpu.opcode Or= (cpu.memory(cpu.current_PC+2) Shl 16)
 	cpu.opcode Or= (cpu.memory(cpu.current_PC+3) Shl 24) 
 End Sub
-Sub decodeInstruction
-	'Must stop working on this or Blyss won't have any work to do...
-	
-	Select Case (cpu.opcode Shr 26)
-		Case &h0 'Special 
-			Select Case(cpu.opcode And &h3F)
-				Case &h20
-					cpu.Operation = "ADD"
-				Case &h21
-					cpu.Operation = "ADDU"
-				Case &h24
-					cpu.Operation = "AND"
-				Case &h0D
-					cpu.Operation = "BREAK"
-				Case &h1A
-					cpu.Operation = "DIV"
-				Case &h1B
-					cpu.Operation = "DIVU"
-				Case &h09
-					cpu.Operation = "JALR"
-				Case &h08
-					cpu.Operation = "JR"
-				Case &h10
-					cpu.Operation = "MFHI"
-				Case &h12
-					cpu.Operation = "MFLO"
-				Case &h11
-					cpu.Operation = "MTHI"
-				Case &h13
-					cpu.Operation = "MTLO"
-			End Select
-		Case &h1
-		Case &h2
-		Case &hD
-			cpu.Operation = "ORI"
-	End Select
-End Sub
+
 Sub Check_Overflow
 	
 End Sub

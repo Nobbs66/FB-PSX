@@ -34,6 +34,7 @@ Declare Sub CPU_LWR
 Declare Sub CPU_MFHI
 Declare Sub CPU_MFLO
 Declare Sub CPU_MTLO
+Declare Sub CPU_MTHI
 Declare Sub CPU_SB
 Declare Sub CPU_SH
 Declare Sub CPU_SW
@@ -67,6 +68,7 @@ Declare Sub CPU_LWCz
 Declare Sub CPU_MFCz
 Declare Sub CPU_MTCz
 Declare Sub CPU_SWCz
+Declare Sub decode_instruction
 
 Sub CPU_ADD
 	cpu.GPR(RD) = cpu.GPR(RS) + cpu.GPR(RT)
@@ -156,6 +158,21 @@ End Sub
 Sub CPU_JR
 	cpu.current_PC += cpu.GPR(RS)
 End Sub
+Sub CPU_MFHI
+	
+End Sub
+
+Sub CPU_MFLO
+	
+End Sub
+
+Sub CPU_MTHI
+	
+End Sub
+
+Sub CPU_MTLO
+	
+End Sub
 Sub CPU_NOR 'Maybe correct????
 	Dim As UInteger tRD = (RD xor &hFFFFFFFF)
 	Dim As UInteger tRT = (RT Xor &hFFFFFFFF)
@@ -220,6 +237,73 @@ Sub CPU_XOR
 End Sub
 Sub CPU_XORI
 	cpu.GPR(RT)= cpu.GPR(RS) xor imm	
+End Sub
+
+Sub decodeInstruction
+	'Must stop working on this or Blyss won't have any work to do...
+	
+	Select Case (cpu.opcode Shr 26)
+		Case &h0 'Special 
+			Select Case(cpu.opcode And &h3F)
+				Case &h20
+					cpu.Operation = "ADD"
+					CPU_ADD
+				Case &h21
+					cpu.Operation = "ADDU"
+					CPU_ADDU
+				Case &h24
+					cpu.Operation = "AND"
+					CPU_AND
+				Case &h0D
+					cpu.Operation = "BREAK"
+					CPU_BREAK
+				Case &h1A
+					cpu.Operation = "DIV"
+					CPU_DIV
+				Case &h1B
+					cpu.Operation = "DIVU"
+					CPU_DIVU
+				Case &h09
+					cpu.Operation = "JALR"
+					CPU_JALR
+				Case &h08
+					cpu.Operation = "JR"
+					CPU_JR
+				Case &h10
+					cpu.Operation = "MFHI"
+					CPU_MFHI
+				Case &h12
+					cpu.Operation = "MFLO"
+					CPU_MFLO
+				Case &h11
+					cpu.Operation = "MTHI"
+					CPU_MTHI
+				Case &h13
+					cpu.Operation = "MTLO"
+					CPU_MTLO
+			End Select
+		Case &h1 'REGIMM = 000001
+			Select Case ((cpu.opcode Shr 16) And &H1F)
+				Case &h1
+					cpu.operation = "BGEZ"
+					CPU_BGEZ
+				Case &h11
+					cpu.operation = "BGEZAL"
+					CPU_BGEZAL
+			End Select
+		Case &h2
+		Case &h4
+			cpu.operation = "BEQ"
+			CPU_BEQ
+		Case &h7
+			cpu.operation = "BGTZ"
+			CPU_BGTZ
+		Case &hc
+			cpu.operation = "ANDI"
+			CPU_ANDI
+		Case &hD
+			cpu.Operation = "ORI"
+	End Select
 End Sub
 
 
