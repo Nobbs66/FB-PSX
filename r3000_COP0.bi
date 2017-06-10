@@ -13,4 +13,5 @@ Function Exception(ByVal syscall As UInteger, ByVal eType As UByte) As UInteger
 		Case 0 'SysCall
 		cop0.Cause Or= (8 Shl 2)	
 	End Select
+	Return 0
 End Function

@@ -2,11 +2,21 @@
 Version=3
 Description=PSX emulator written in FreeBASIC
 Api=fb (FreeBASIC)
+Grouping=1
+AddMainFiles=1
+AddModuleFiles=1
+ResExport=
+CompileIfNewer=0
+IncVersion=0
+RunCmd=0
 [Make]
 Current=1
 1=Windows GUI,fbc -s gui
 Recompile=2
-Module=Module Build,fbc -c
+Module=Module Build,fbc -g
+Output=
+Run=
+Delete=
 [TabOrder]
 TabOrder=1,3,4,6,7
 [File]

@@ -177,11 +177,13 @@ Sub CPU_DIVU
 
 End Sub
 Sub CPU_J
-	cpu.current_PC += Target
+	cpu.current_PC And= &hF0000000
+	cpu.current_PC or= Target + 4
 End Sub
 Sub CPU_JAL
 	cpu.GPR(31) = cpu.current_PC + 8
-	cpu.current_PC += Target
+	cpu.current_PC And= &hF0000000
+	cpu.current_PC or= Target + 4
 End Sub
 Sub CPU_JALR
 	cpu.GPR(RD) = cpu.current_PC + 8
@@ -224,7 +226,8 @@ Sub CPU_LWR
 End Sub
 
 Sub CPU_LUI
-	
+	cpu.GPR(RT) = 0 
+	cpu.GPR(RS) or= (imm Shl 16)
 End Sub
 
 Sub CPU_MFC0

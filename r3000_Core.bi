@@ -1,6 +1,7 @@
 Declare Sub Check_Overflow
 Declare Sub loadBIOS
 Declare Sub validBIOS
+Declare Sub initCPU
 Declare Function Write32(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 Declare function Read32(ByVal addr As UInteger) As UInteger
 Type cpus
@@ -36,6 +37,9 @@ get #1, i, cpu.bios(i-1)
 Next
 close #1
 End Sub
+Sub initCPU
+	cpu.current_PC = &hBFC00000
+End Sub
 Sub fetchInstruction 'Copies 4 bytes to a 32-bit opcode variable
 	cpu.opcode = 0 'Not clearing opcode breaks things horribly! 
 	Select Case cpu.current_PC
@@ -57,7 +61,7 @@ Sub fetchInstruction 'Copies 4 bytes to a 32-bit opcode variable
 			cpu.opcode Or= (cpu.memory(cpu.current_PC+i) Shl i*8)
 			Next
 	'''''''''''''''''''''''''''''''''''''''''''''''''''''
-		Case &hBFC00000
+		Case &hBFC00000 To &hBFC7FFFF
 			For i As Integer = 0 To 3
 			cpu.opcode Or= (cpu.bios((cpu.current_PC+i) And &h7FFFF) Shl i*8)
 			Next
@@ -81,10 +85,11 @@ Function Write32(ByVal addr As UInteger, ByVal value As UByte) As uinteger
 		Case Else 
 			Print "WHY ARE YOU WRITING HERE STUPID THING!"
 	End Select
+	return 0 
 End Function
 function Read32(ByVal addr As UInteger) As UInteger
 		'Memory is split into a few different regions
-		Dim value As UByte 
+		dim value as ubyte 
 	Select Case addr
 		Case &h0 To &h1FFFFF
 			value = cpu.memory(addr) 
@@ -93,9 +98,10 @@ function Read32(ByVal addr As UInteger) As UInteger
 		Case &hA0000000 To &hA01FFFFF
 			value = cpu.memory(addr And &h1FFFFF) 
 		Case &hBFC00000 To &hBFC7FFFF
-			value = cpu.bios(addr And &h7FFFF)
+			value = cpu.bios(addr and &h7FFFF)
 		Case Else 
 			Print "DO YOU REALLY NEED THIS DATA?"
 	End Select
+	return value
 End Function
 
