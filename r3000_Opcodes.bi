@@ -46,7 +46,7 @@ Declare Sub CPU_SLTI
 Declare Sub CPU_SLTIU
 Declare Sub CPU_SLTU
 Declare Sub CPU_SYSCALL
-'Logic Flow Operations 
+'Logic Flow Operations
 Declare Sub CPU_BEQ
 Declare Sub CPU_BGEZ
 Declare Sub CPU_BGEZAL
@@ -61,12 +61,21 @@ Declare Sub CPU_JAL
 Declare Sub CPU_JALR
 Declare Sub CPU_JR
 'Coprocessor Operations
-Declare Sub CPU_CFCz
-Declare Sub CPU_COPz
-Declare Sub CPU_CTCz
-Declare Sub CPU_LWCz
-Declare Sub CPU_MFCz
-Declare Sub CPU_MTCz
+Declare Sub CPU_CFC1 'CFCz
+Declare Sub CPU_CFC2 'CFCz
+Declare Sub CPU_CFC3 'CFCz
+Declare Sub CPU_COP0 'COPz
+Declare Sub CPU_COP1 'COPz
+Declare Sub CPU_COP2 'COPz
+Declare Sub CPU_COP3 'COPz
+Declare Sub CPU_CTC1 'CTCz
+Declare Sub CPU_CTC2 'CTCz
+Declare Sub CPU_CTC3 'CTCz
+Declare Sub CPU_LWC2
+Declare Sub CPU_MFC0 'MFCz
+Declare Sub CPU_MFC2 'MFCz
+Declare Sub CPU_MTC0 'MTCz
+Declare Sub CPU_MTC2 'MTCz
 Declare Sub CPU_SWCz
 Declare Sub decode_instruction
 
@@ -102,7 +111,7 @@ End Sub
 Sub CPU_BGEZAL
 	Dim As UInteger test = ((cpu.GPR(RS) And &h80000000)Shr 31)
 	If test = 0 Then cpu.current_PC += Offset
-	cpu.GPR(31) = cpu.current_PC + 8	
+	cpu.GPR(31) = cpu.current_PC + 8
 End Sub
 Sub CPU_BGTZ
 	Dim As UByte test = ((cpu.GPR(RS) And &h80000000)Shr 31)
@@ -110,69 +119,149 @@ Sub CPU_BGTZ
 End Sub
 Sub CPU_BLEZ
 	Dim As UByte test = ((cpu.GPR(RS) And &h80000000)Shr 31)
-	If test = 1 Then cpu.current_PC += Offset	
+	If test = 1 Then cpu.current_PC += Offset
 End Sub
 Sub CPU_BLTZ
 	Dim As UByte test = ((cpu.GPR(RS) And &h80000000)Shr 31)
 	If ((test = 1) And (RS <> 0)) Then cpu.delay_slot_PC = cpu.current_PC + 4
 	If ((test = 1) And (RS <> 0)) Then cpu.current_PC += Offset
-	If ((test = 1) And (RS <> 0)) Then cpu.branch_queued = 1 
+	If ((test = 1) And (RS <> 0)) Then cpu.branch_queued = 1
 End Sub
 Sub CPU_BLTZAl
 	Dim As UByte test = ((cpu.GPR(RS) And &h80000000)Shr 31)
 	If ((test = 0) And (RS <> 0)) Then cpu.current_PC += Offset
-	cpu.GPR(31) = cpu.current_PC + 8 
+	cpu.GPR(31) = cpu.current_PC + 8
 End Sub
 Sub CPU_BNE
-	If cpu.GPR(RS) <> cpu.GPR(RT) Then cpu.current_PC += Offset	
+	If cpu.GPR(RS) <> cpu.GPR(RT) Then cpu.current_PC += Offset
 End Sub
 Sub CPU_BREAK
 	'Breakpoint Exception
 End Sub
-Sub CPU_CFCz
+Sub CPU_CFC1
+
+End Sub
+
+Sub CPU_CFC2
+
+End Sub
+
+Sub CPU_CFC3
+
+End Sub
+Sub CPU_COP0
+
+End Sub
+Sub CPU_COP1
+
+End Sub
+Sub CPU_COP2
+
+End Sub
+Sub CPU_COP3
+
+End Sub
+Sub CPU_CTC1
 	
 End Sub
-Sub CPU_COPz
+Sub CPU_CTC2
 	
 End Sub
-Sub CPU_CTCz
-	
+Sub CPU_CTC3
+
 End Sub
 Sub CPU_DIV
-	
+
 End Sub
 Sub CPU_DIVU
-	
+
 End Sub
 Sub CPU_J
 	cpu.current_PC += Target
 End Sub
 Sub CPU_JAL
-	cpu.GPR(31) = cpu.current_PC + 8 
+	cpu.GPR(31) = cpu.current_PC + 8
 	cpu.current_PC += Target
 End Sub
 Sub CPU_JALR
-	cpu.GPR(RD) = cpu.current_PC + 8 
+	cpu.GPR(RD) = cpu.current_PC + 8
 	cpu.current_PC += cpu.GPR(RS)
 End Sub
 Sub CPU_JR
 	cpu.current_PC += cpu.GPR(RS)
 End Sub
-Sub CPU_MFHI
+
+Sub CPU_LB
 	
+End Sub
+
+Sub CPU_LBU
+	
+End Sub
+
+Sub CPU_LH
+	
+End Sub
+
+Sub CPU_LHU
+	
+End Sub
+
+Sub CPU_LW
+	
+End Sub
+
+Sub CPU_LWC2
+	
+End Sub
+
+Sub CPU_LWL
+	
+End Sub
+
+Sub CPU_LWR
+	
+End Sub
+
+Sub CPU_LUI
+	
+End Sub
+
+Sub CPU_MFC0
+	
+End Sub
+
+Sub CPU_MFC2
+	
+End Sub
+
+Sub CPU_MFHI
+
 End Sub
 
 Sub CPU_MFLO
+
+End Sub
+
+Sub CPU_MTC0
 	
+End Sub
+Sub CPU_MTC2
+		
 End Sub
 
 Sub CPU_MTHI
-	
+
 End Sub
 
 Sub CPU_MTLO
+
+End Sub
+
+Sub CPU_MULT
 	
 End Sub
+
 Sub CPU_NOR 'Maybe correct????
 	Dim As UInteger tRD = (RD xor &hFFFFFFFF)
 	Dim As UInteger tRT = (RT Xor &hFFFFFFFF)
@@ -183,7 +272,7 @@ Sub CPU_OR
 	cpu.GPR(RD) = cpu.GPR(RS) Or cpu.GPR(RT)
 End Sub
 Sub CPU_ORI
-	cpu.GPR(RT)= cpu.GPR(RS) Or imm	
+	cpu.GPR(RT)= cpu.GPR(RS) Or imm
 End Sub
 Sub CPU_SLL
 	cpu.GPR(RD) = cpu.GPR(RT) Shl SA
@@ -199,16 +288,16 @@ End Sub
 Sub CPU_SLTI
 	Dim As Integer tImm = imm
 	Dim As Integer tRS = cpu.GPR(RS)
-	If tRS < tImm Then cpu.GPR(RT) = 1 Else cpu.GPR(RT) = 0 
+	If tRS < tImm Then cpu.GPR(RT) = 1 Else cpu.GPR(RT) = 0
 End Sub
-Sub CPU_SLTIU 'Might be correct without sign extension? 
+Sub CPU_SLTIU 'Might be correct without sign extension?
 	If cpu.GPR(RS) < imm Then cpu.GPR(RT) = 1 Else cpu.GPR(RT) = 0
 End Sub
 Sub CPU_SLTU
-	If cpu.GPR(RS) < cpu.GPR(RT) Then cpu.GPR(RD) = 1 Else cpu.GPR(RD) = 0 
+	If cpu.GPR(RS) < cpu.GPR(RT) Then cpu.GPR(RD) = 1 Else cpu.GPR(RD) = 0
 End Sub
 Sub CPU_SRA
-	Dim As Integer temp = cpu.GPR(RT) Shr SA 
+	Dim As Integer temp = cpu.GPR(RT) Shr SA
 	cpu.GPR(RD) = temp
 End Sub
 Sub CPU_SRAV
@@ -236,14 +325,14 @@ Sub CPU_XOR
 	cpu.GPR(RD) = cpu.GPR(RS) Xor cpu.GPR(RT)
 End Sub
 Sub CPU_XORI
-	cpu.GPR(RT)= cpu.GPR(RS) xor imm	
+	cpu.GPR(RT)= cpu.GPR(RS) xor imm
 End Sub
 
 Sub decodeInstruction
 	'Must stop working on this or Blyss won't have any work to do...
-	
+
 	Select Case (cpu.opcode Shr 26)
-		Case &h0 'Special 
+		Case &h0 'Special
 			Select Case(cpu.opcode And &h3F)
 				Case &h20
 					cpu.Operation = "ADD"
@@ -281,20 +370,40 @@ Sub decodeInstruction
 				Case &h13
 					cpu.Operation = "MTLO"
 					CPU_MTLO
+				Case &h18
+					cpu.operation = "MULT"
+					CPU_MULT
 			End Select
 		Case &h1 'REGIMM = 000001
 			Select Case ((cpu.opcode Shr 16) And &H1F)
+				Case &h0
+					cpu.operation = "BLTZ"
+					CPU_BLTZ
 				Case &h1
 					cpu.operation = "BGEZ"
 					CPU_BGEZ
+				Case &h10
+					cpu.operation = "BLTZAL"
+					CPU_BLTZAL
 				Case &h11
 					cpu.operation = "BGEZAL"
 					CPU_BGEZAL
 			End Select
 		Case &h2
+			cpu.operation = "J"
+			CPU_J
+		Case &h3
+			cpu.operation = "JAL"
+			CPU_JAL
 		Case &h4
 			cpu.operation = "BEQ"
 			CPU_BEQ
+		Case &h5
+			cpu.operation = "BNE"
+			CPU_BNE
+		Case &h6
+			cpu.operation = "BLEZ"
+			CPU_BLEZ
 		Case &h7
 			cpu.operation = "BGTZ"
 			CPU_BGTZ
@@ -303,6 +412,77 @@ Sub decodeInstruction
 			CPU_ANDI
 		Case &hD
 			cpu.Operation = "ORI"
+		Case &hF
+			cpu.operation  = "LUI"
+			CPU_LUI
+		Case &h10 To &h12
+			If (cpu.opcode Shr 25) And &h1 = 0 Then
+			Select Case (cpu.opcode Shr 21) And &h1f
+				Case &h0 'MFCz
+				If (cpu.opcode And &h3F) = &h10 Then
+					cpu.operation = "MFC0"
+					CPU_MFC0
+				ElseIf (cpu.opcode And &h3F) = &h12 Then
+					cpu.operation = "MFC2"
+					CPU_MFC2
+				EndIf
+					
+				Case &h2 'CFCz
+					If (cpu.opcode And &h3F) = &h12 Then
+						cpu.operation = "CFC2"
+						CPU_CFC2
+					EndIf
+					
+				Case &he 'CTCz
+					If (cpu.opcode And &h3F) = &h12 Then
+						cpu.operation = "CTC2"
+						CPU_CTC2
+					EndIf
+					
+				Case &h64 'MTCz
+					
+				If (cpu.opcode And &h3F) = &h10 Then
+					cpu.operation = "MTC0"
+					CPU_MTC0
+				ElseIf (cpu.opcode And &h3F) = &h12 Then
+					cpu.operation = "MTC2"
+					CPU_MTC2
+				EndIf
+					
+			End Select
+			Else 'COPz
+				If (cpu.opcode And &h3F) = &h10 Then
+					cpu.operation = "COP0"
+					CPU_COP0
+				ElseIf (cpu.opcode And &h3F) = &h12 Then
+					cpu.operation = "COP2"
+					CPU_COP2
+				EndIf
+			End If
+		Case &h20
+			cpu.operation = "LB"
+			CPU_LB
+		Case &H21
+			cpu.operation = "LH"
+			CPU_LH
+		Case &h22
+			cpu.operation = "LWL"
+			CPU_LWL
+		Case &h23
+			cpu.operation = "LW"
+			CPU_LW
+		Case &h24
+			cpu.operation = "LBU"
+			CPU_LBU
+		Case &h25
+			cpu.operation = "LHU"
+			CPU_LHU
+		Case &h26
+			cpu.operation = "LWR"
+			CPU_LWR
+		Case &h32
+			cpu.operation = "LWC2"
+			CPU_LWC2
 	End Select
 End Sub
 

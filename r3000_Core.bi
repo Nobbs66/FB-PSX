@@ -34,7 +34,6 @@ Sub loadBIOS
 Open "BIOS\SCPH1001.BIN" for binary as #1
 for i as uinteger  = 0 to &h80000
 get #1, i, cpu.bios(i-1)
-if eof(1) then exit For
 Next
 close #1
 End Sub
