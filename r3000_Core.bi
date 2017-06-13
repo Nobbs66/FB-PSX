@@ -82,6 +82,8 @@ Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As uinteger
 		 	cpu.memory(addr And &h1FFFFF) = value
 		Case &hA0000000 To &hA01FFFFF
 			cpu.memory(addr And &h1FFFFF) = value
+		Case &h1F801000 To &h1F801FFC
+			Print "Writing to I/O Port at address " & Hex(addr)
 		Case Else 
 			Print "WHY ARE YOU WRITING HERE STUPID THING!"
 	End Select

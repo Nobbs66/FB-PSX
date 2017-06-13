@@ -175,19 +175,18 @@ Sub CPU_JR
 End Sub
 
 Sub CPU_LB
-	Dim As Integer temp = Offset + cpu.GPR(RS) 'RS shares the same position with base
+	Dim As Integer temp = imm + cpu.GPR(RS) 'RS shares the same position with base
 	Dim As Integer value = ReadByte(temp)
 	cpu.GPR(RT) = value
 End Sub
 
 Sub CPU_LBU
-	Dim As Integer temp = Offset + cpu.GPR(RS)
+	Dim As Integer temp = imm + cpu.GPR(RS)
 	cpu.GPR(RT) = ReadByte(temp)
 End Sub
 
 Sub CPU_LH
-	Dim As Integer temp = Offset 
-	temp += cpu.GPR(RS)
+	Dim As Integer temp = imm + cpu.GPR(RS)
 	Dim As Byte test = temp And 1
 	Dim load As integer
 	For i As uInteger = 0 To 1
@@ -197,8 +196,7 @@ Sub CPU_LH
 End Sub
 
 Sub CPU_LHU
-	Dim As Integer temp = Offset 
-	temp += cpu.GPR(RS)
+	Dim As Integer temp = imm + cpu.GPR(RS)
 	Dim As Byte test = temp And 1
 	Dim load As uinteger
 	For i As uInteger = 0 To 1
@@ -207,14 +205,13 @@ Sub CPU_LHU
 	If test = 0 Then cpu.GPR(RT) = load
 End Sub
 
-Sub CPU_LUI
-	cpu.GPR(RT) = 0 
-	cpu.GPR(RS) or= (imm Shl 16)
+Sub CPU_LUI 
+	cpu.GPR(RT) = (imm Shl 16)
+	Print 
 End Sub
 
 Sub CPU_LW
-	Dim As Integer temp = Offset 
-	temp += cpu.GPR(RS)
+	Dim As Integer temp = imm + cpu.GPR(RS)
 	Dim As Byte test = temp And 1
 	cpu.GPR(RT) = 0 
 	Dim load As integer
@@ -297,16 +294,14 @@ Sub CPU_ORI
 	cpu.GPR(RT)= cpu.GPR(RS) Or imm
 End Sub
 Sub CPU_SB
-	Dim As Integer temp = Offset 
-	temp += cpu.GPR(RS) 'RS shares the same position with base
+	Dim As Integer temp = imm + cpu.GPR(RS) 'RS shares the same position with base
 	Dim As Integer value = cpu.GPR(RT) And &hFF
 	WriteByte(temp,value)
 End Sub
 
 Sub CPU_SH
 	'I'm not confident with this one
-	Dim As Integer temp = Offset 
-	temp += cpu.GPR(RS)
+	Dim As Integer temp = imm + cpu.GPR(RS)
 	Dim As Byte test = temp And 1
 	Dim load As Byte
 	load = cpu.GPR(RT) And &hFF
@@ -360,11 +355,9 @@ End Sub
 
 Sub CPU_SW
 	'I'm not confident with this one
-	Dim As Integer temp = Offset 
-	temp += cpu.GPR(RS)
+	Dim As Integer temp = imm + cpu.GPR(RS)
 	Dim As Byte test = temp And 1
 	Dim load As Byte
-	load = cpu.GPR(RT) And &hFF
 	For i As Integer = 0 To 3
 		load = ((cpu.GPR(RT) Shr i*8) And &hFF)
 		WriteByte(temp+i,load)
