@@ -73,20 +73,39 @@ End Sub
 Sub Check_Overflow
 	
 End Sub
+Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
+	addr And= &hFFFF
+	Select Case addr
+		Case &h1000 To &h1020 'Memory Control 1
+		Case &h1040 To &h105F 'Peripheral IO
+		Case &h1060				 'Memory Control 2
+		Case &h1070 To &h1078 'Interrupt Control
+		Case &h1080 To &h10F4 'DMA Registers
+		Case &h1100 To &h1120 'Timers
+		Case &h1800 To &h1804 'CD ROM
+		Case &h1820 To &h1828 'MDEC
+		Case &hC000 To &h1FFF 'SPU
+	End Select
+	Return 0 
+End Function
 Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As uinteger
 	'Memory is split into a few different regions
 	Select Case addr
-		Case &h0 To &h1FFFFF
+		Case &h0 To &h1FFFFF 'KUSEG
 			cpu.memory(addr) = value
-		Case &h80000000 To &h801FFFFF
+		Case &h80000000 To &h801FFFFF 'KSEG0
 		 	cpu.memory(addr And &h1FFFFF) = value
-		Case &hA0000000 To &hA01FFFFF
+		Case &hA0000000 To &hA01FFFFF 'KSEG1
 			cpu.memory(addr And &h1FFFFF) = value
-		Case &h1F801000 To &h1F801FFC
-			Print "Writing to I/O Port at address " & Hex(addr)
+		Case &h1F800000 To &h1F8003FF 'Scratchpad
+			cpu.dCache(addr And &h3FF) = value
+		Case &h1F801000 To &h1F801FFC 'I/O Ports
+			Print "Writing I/O Port at: " & Hex(addr)
+			writeIO(addr, value)
 		Case Else 
 			Print "WHY ARE YOU WRITING HERE STUPID THING!"
 	End Select
+
 	return 0 
 End Function
 function ReadByte(ByVal addr As UInteger) As UInteger

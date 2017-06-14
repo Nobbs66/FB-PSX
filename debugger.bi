@@ -1,12 +1,16 @@
-Declare Sub memoryModify
+Declare Sub modifyRAM
 Declare Sub modfyGPR
-Sub memoryModify
-	Do 
-		
-	Loop While Not MultiKey(SC_ESCAPE)
+Sub modifyRAM
+	Dim As UInteger addr
+	Dim As UByte value
+	Input "Enter the address followed by the data ", addr, value
+	cpu.memory(addr) = value
+	Print "Address: " & Hex(addr) & " = " & Hex(cpu.memory(addr))
 End Sub
 Sub modifyGPR
-	Do 
-		
-	Loop While Not MultiKey(SC_ESCAPE)
+	Dim As UInteger value
+	Dim As UByte reg
+	Input "Enter GPR followed by the data ", reg, value
+	cpu.GPR(reg) = value
+	Print "GPR: " & reg & " " & Hex(cpu.GPR(reg)) 
 End Sub
