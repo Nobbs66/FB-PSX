@@ -20,8 +20,12 @@ Type cpus
 	Operation As String
    const Reset_Vector As UInteger = &hBFC00000
 End Type
-Dim Shared cpu As cpus
+Type ports
+	memMirror As UByte '2mb or 8mb memory config
 
+End Type
+Dim Shared cpu As cpus
+Dim Shared port As ports
 #Define RD  	((cpu.opcode Shr 11) And &h1F)
 #Define RT  	((cpu.opcode Shr 16) And &h1F)
 #Define RS  	((cpu.opcode Shr 21) And &h1F)
@@ -79,6 +83,7 @@ Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 		Case &h1000 To &h1020 'Memory Control 1
 		Case &h1040 To &h105F 'Peripheral IO
 		Case &h1060				 'Memory Control 2
+			port.memMirror = value
 		Case &h1070 To &h1078 'Interrupt Control
 		Case &h1080 To &h10F4 'DMA Registers
 		Case &h1100 To &h1120 'Timers
@@ -105,7 +110,6 @@ Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As uinteger
 		Case Else 
 			Print "WHY ARE YOU WRITING HERE STUPID THING!"
 	End Select
-
 	return 0 
 End Function
 function ReadByte(ByVal addr As UInteger) As UInteger

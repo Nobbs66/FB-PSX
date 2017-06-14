@@ -39,6 +39,5 @@ If MultiKey(SC_M) Then
 	Sleep 2000
 EndIf
 
-Sleep 100
 Loop While Not MultiKey(SC_ESCAPE)
 

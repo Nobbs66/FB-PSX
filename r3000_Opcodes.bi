@@ -27,6 +27,7 @@ Declare Sub CPU_LB
 Declare Sub CPU_LBU
 Declare Sub CPU_LH
 Declare Sub CPU_LHU
+Declare Sub CPU_LI
 Declare Sub CPU_LUI
 Declare Sub CPU_LW
 Declare Sub CPU_LWL
@@ -190,7 +191,7 @@ Sub CPU_LH
 	Dim As Byte test = temp And 1
 	Dim load As integer
 	For i As uInteger = 0 To 1
-	load Or= (cpu.memory(temp+i) Shl i*8)
+	load Or= (ReadByte(temp+i) Shl i*8)
 	Next
 	If test = 0 Then cpu.GPR(RT) = load
 End Sub
@@ -204,10 +205,11 @@ Sub CPU_LHU
 	Next
 	If test = 0 Then cpu.GPR(RT) = load
 End Sub
-
+Sub CPU_LI
+	cpu.GPR(RT) = imm 
+End Sub
 Sub CPU_LUI 
 	cpu.GPR(RT) = (imm Shl 16)
-	Print 
 End Sub
 
 Sub CPU_LW
@@ -216,7 +218,7 @@ Sub CPU_LW
 	cpu.GPR(RT) = 0 
 	Dim load As integer
 	For i As Integer = 0 To 3
-	load Or= (cpu.memory(temp+i) Shl i*8)
+	load = (ReadByte(temp+i) Shl i*8)
 	Next
 	cpu.GPR(RT) = load
 End Sub
@@ -362,6 +364,7 @@ Sub CPU_SW
 		load = ((cpu.GPR(RT) Shr i*8) And &hFF)
 		WriteByte(temp+i,load)
 	Next
+	Print Hex(cpu.GPR(RT))
 End Sub
 
 Sub CPU_SWC2
@@ -387,6 +390,7 @@ Sub CPU_XORI
 End Sub
 
 Sub decodeInstruction
+	If cpu.opcode <> 0 Then 
 	Select Case (cpu.opcode Shr 26)
 		Case &h0 'Special
 			Select Case(cpu.opcode And &h3F)
@@ -508,6 +512,9 @@ Sub decodeInstruction
 		Case &h7
 			cpu.operation = "BGTZ"
 			CPU_BGTZ
+		Case &h9
+			cpu.operation = "LI"
+			CPU_LI
 		Case &hA
 			cpu.operation = "SLTI"
 			CPU_SLTI
@@ -613,6 +620,8 @@ Sub decodeInstruction
 			cpu.operation = "SWC2"
 			CPU_SWC2
 	End Select
+	Else cpu.operation = "NOP" 
+	endif
 End Sub
 
 
