@@ -89,8 +89,7 @@ Sub CPU_ADDI
 	Check_Overflow
 End Sub
 Sub CPU_ADDIU
-	Dim As UInteger temp = imm And &h8000
-	If temp = 1 Then temp = imm Or &hFFFF0000 Else temp = imm
+	Dim As Integer temp = imm
 	cpu.GPR(RT) = temp + cpu.GPR(RS)
 End Sub
 Sub CPU_ADDU
@@ -205,9 +204,6 @@ Sub CPU_LHU
 	Next
 	If test = 0 Then cpu.GPR(RT) = load
 End Sub
-Sub CPU_LI
-	cpu.GPR(RT) = imm 
-End Sub
 Sub CPU_LUI 
 	cpu.GPR(RT) = (imm Shl 16)
 End Sub
@@ -218,7 +214,8 @@ Sub CPU_LW
 	cpu.GPR(RT) = 0 
 	Dim load As integer
 	For i As Integer = 0 To 3
-	load = (ReadByte(temp+i) Shl i*8)
+	load or= (ReadByte(temp+(3-i)) Shl (24-(i*8)))
+	Print Hex(load)
 	Next
 	cpu.GPR(RT) = load
 End Sub
@@ -363,8 +360,7 @@ Sub CPU_SW
 	For i As Integer = 0 To 3
 		load = ((cpu.GPR(RT) Shr i*8) And &hFF)
 		WriteByte(temp+i,load)
-	Next
-	Print Hex(cpu.GPR(RT))
+	Next	
 End Sub
 
 Sub CPU_SWC2
@@ -513,8 +509,8 @@ Sub decodeInstruction
 			cpu.operation = "BGTZ"
 			CPU_BGTZ
 		Case &h9
-			cpu.operation = "LI"
-			CPU_LI
+			cpu.operation = "ADDIU"
+			CPU_ADDIU
 		Case &hA
 			cpu.operation = "SLTI"
 			CPU_SLTI

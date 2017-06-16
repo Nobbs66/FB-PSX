@@ -4,6 +4,8 @@ Declare Sub validBIOS
 Declare Sub initCPU
 Declare Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 Declare function ReadByte(ByVal addr As UInteger) As UInteger
+
+
 Type cpus
 	memory(&h200000) As UByte
 	iCache(&hFFF) As ubyte
@@ -18,12 +20,16 @@ Type cpus
 	bios(&h80000) As UByte
 	opcode As UInteger
 	Operation As String
+	memSize As UByte
    const Reset_Vector As UInteger = &hBFC00000
 End Type
 Type ports
 	memMirror As UByte '2mb or 8mb memory config
 
 End Type
+Const As UInteger KUSEG = &h1FFFFF
+Const As UInteger KSEG0 = &h80000000
+Const As UInteger KSEG1 = &hA0000000
 Dim Shared cpu As cpus
 Dim Shared port As ports
 #Define RD  	((cpu.opcode Shr 11) And &h1F)
@@ -35,7 +41,8 @@ Dim Shared port As ports
 #Define Target ((cpu.opcode And &h3FFFFFF) Shl 2)
 
 Sub loadBIOS
-Open "BIOS\SCPH1001.BIN" for binary as #1
+'Open "BIOS\SCPH1001.BIN" for binary as #1
+Open "BIOS\SCPH1001.BIN" For Binary As #1
 for i as uinteger  = 0 to &h80000
 get #1, i, cpu.bios(i-1)
 Next
@@ -82,8 +89,10 @@ Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 	Select Case addr
 		Case &h1000 To &h1020 'Memory Control 1
 		Case &h1040 To &h105F 'Peripheral IO
-		Case &h1060				 'Memory Control 2
-			port.memMirror = value
+		Case &h1061 			 'Memory Control 2
+		port.memMirror = (value Shr 1)
+		If port.memMirror = 5 Then cpu.memSize = 8 
+		Print "Memory Size: " & cpu.memSize
 		Case &h1070 To &h1078 'Interrupt Control
 		Case &h1080 To &h10F4 'DMA Registers
 		Case &h1100 To &h1120 'Timers
@@ -91,16 +100,17 @@ Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 		Case &h1820 To &h1828 'MDEC
 		Case &hC000 To &h1FFF 'SPU
 	End Select
+	Print port.memMirror
 	Return 0 
 End Function
 Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As uinteger
 	'Memory is split into a few different regions
 	Select Case addr
-		Case &h0 To &h1FFFFF 'KUSEG
+		Case &h0 To (KUSEG*8) 'KUSEG
 			cpu.memory(addr) = value
-		Case &h80000000 To &h801FFFFF 'KSEG0
+		Case KSEG1 To KSEG1+(KUSEG*8)'KSEG0
 		 	cpu.memory(addr And &h1FFFFF) = value
-		Case &hA0000000 To &hA01FFFFF 'KSEG1
+		Case KSEG1 To KSEG1+(KUSEG*8) 'KSEG1
 			cpu.memory(addr And &h1FFFFF) = value
 		Case &h1F800000 To &h1F8003FF 'Scratchpad
 			cpu.dCache(addr And &h3FF) = value
@@ -109,6 +119,8 @@ Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As uinteger
 			writeIO(addr, value)
 		Case Else 
 			Print "WHY ARE YOU WRITING HERE STUPID THING!"
+			Print "ADDRESS: " & Hex(addr)
+			Print "DATA: " & Hex(value)
 	End Select
 	return 0 
 End Function

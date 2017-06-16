@@ -1,5 +1,6 @@
 Declare Sub modifyRAM
 Declare Sub modfyGPR
+Declare Sub menu
 Sub modifyRAM
 	Dim As UInteger addr
 	Dim As UByte value
@@ -13,4 +14,9 @@ Sub modifyGPR
 	Input "Enter GPR followed by the data ", reg, value
 	cpu.GPR(reg) = value
 	Print "GPR: " & reg & " " & Hex(cpu.GPR(reg)) 
+End Sub
+Sub menu
+	Dim As String in
+	Input "Enter a command ", in
+	If in = "Exit" Then CAE
 End Sub
