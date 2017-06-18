@@ -85,7 +85,13 @@ Sub CPU_ADD
 	Check_Overflow
 End Sub
 Sub CPU_ADDI
+	'Dim As Integer value = imm
+	Print "ADDI " 
+	If RT = RS Then 
+	cpu.GPR(RT) += imm
+	Else
 	cpu.GPR(RT) = cpu.GPR(RS) + imm
+	endif
 	Check_Overflow
 End Sub
 Sub CPU_ADDIU
@@ -102,38 +108,103 @@ Sub CPU_ANDI
 	cpu.GPR(RT)= cpu.GPR(RS) And imm
 End Sub
 Sub CPU_BEQ
-	If cpu.GPR(RS) = cpu.GPR(RT) Then cpu.current_PC += Offset
+	If cpu.GPR(RS) = cpu.GPR(RT) Then 
+		cpu.branch_queued = 2
+		If imm >= &h8000 Then 
+		Dim As Short addr = &h10000 - imm
+		addr = addr Shl 2
+		addr -= 4
+		cpu.delay_slot_PC = cpu.current_PC - addr
+	EndIf
+	EndIf
 End Sub
 Sub CPU_BGEZ
 	Dim As uinteger test = ((cpu.GPR(RS) And &h80000000)Shr 31)
-	If test = 0 Then cpu.current_PC += Offset
+	If test = 0 Then 
+		cpu.branch_queued = 2
+		If imm >= &h8000 Then 
+		Dim As Short addr = &h10000 - imm
+		addr = addr Shl 2
+		addr -= 4
+		cpu.delay_slot_PC = cpu.current_PC - addr
+	EndIf
+	EndIf
 End Sub
 Sub CPU_BGEZAL
 	Dim As UInteger test = ((cpu.GPR(RS) And &h80000000)Shr 31)
-	If test = 0 Then cpu.current_PC += Offset
+	If test = 0 Then 
+		cpu.branch_queued = 2
+		If imm >= &h8000 Then 
+		Dim As Short addr = &h10000 - imm
+		addr = addr Shl 2
+		addr -= 4
+		cpu.delay_slot_PC = cpu.current_PC - addr
+	EndIf
+	EndIf
 	cpu.GPR(31) = cpu.current_PC + 8
 End Sub
 Sub CPU_BGTZ
 	Dim As UByte test = ((cpu.GPR(RS) And &h80000000)Shr 31)
-	If ((test = 0) And (RS <> 0)) Then cpu.current_PC += Offset
+	If ((test = 0) And (RS <> 0)) Then 
+		cpu.branch_queued = 2
+		If imm >= &h8000 Then 
+		Dim As Short addr = &h10000 - imm
+		addr = addr Shl 2
+		addr -= 4
+		cpu.delay_slot_PC = cpu.current_PC - addr
+	EndIf
+	EndIf
 End Sub
 Sub CPU_BLEZ
 	Dim As UByte test = ((cpu.GPR(RS) And &h80000000)Shr 31)
-	If test = 1 Then cpu.current_PC += Offset
+	If test = 1 Then 
+		cpu.branch_queued = 2
+		If imm >= &h8000 Then 
+		Dim As Short addr = &h10000 - imm
+		addr = addr Shl 2
+		addr -= 4
+		cpu.delay_slot_PC = cpu.current_PC - addr
+	EndIf
+	EndIf
 End Sub
 Sub CPU_BLTZ
 	Dim As UByte test = ((cpu.GPR(RS) And &h80000000)Shr 31)
-	If ((test = 1) And (RS <> 0)) Then cpu.delay_slot_PC = cpu.current_PC + 4
-	If ((test = 1) And (RS <> 0)) Then cpu.current_PC += Offset
-	If ((test = 1) And (RS <> 0)) Then cpu.branch_queued = 1
+	If ((test = 1) And (RS <> 0)) Then 
+		cpu.branch_queued = 2
+		If imm >= &h8000 Then 
+		Dim As Short addr = &h10000 - imm
+		addr = addr Shl 2
+		addr -= 4
+		cpu.delay_slot_PC = cpu.current_PC - addr
+	EndIf
+	EndIf
 End Sub
 Sub CPU_BLTZAl
 	Dim As UByte test = ((cpu.GPR(RS) And &h80000000)Shr 31)
-	If ((test = 0) And (RS <> 0)) Then cpu.current_PC += Offset
+	If ((test = 0) And (RS <> 0)) Then 
+		cpu.branch_queued = 2
+		If imm >= &h8000 Then 
+		Dim As Short addr = &h10000 - imm
+		addr = addr Shl 2
+		addr -= 4
+		cpu.delay_slot_PC = cpu.current_PC - addr
+	EndIf
+	EndIf
 	cpu.GPR(31) = cpu.current_PC + 8
 End Sub
 Sub CPU_BNE
-	If cpu.GPR(RS) <> cpu.GPR(RT) Then cpu.current_PC += Offset
+
+	'Print "ADDR " & Hex(addr)
+	If cpu.GPR(RS) <> cpu.GPR(RT) Then 
+		cpu.branch_queued = 2
+		If imm >= &h8000 Then 
+		Dim As Short addr = &h10000 - imm
+		addr = addr Shl 2
+		addr -= 4
+		cpu.delay_slot_PC = cpu.current_PC - addr
+	EndIf
+	EndIf
+
 End Sub
 Sub CPU_BREAK
 	'Breakpoint Exception
@@ -158,13 +229,15 @@ Sub CPU_DIVU
 
 End Sub
 Sub CPU_J
-	cpu.current_PC And= &hF0000000
-	cpu.current_PC or= Target + 4
+	cpu.delay_slot_PC = cpu.current_PC And &hF0000000
+	cpu.delay_slot_PC or= Target + 4
+	cpu.branch_queued = 2
 End Sub
 Sub CPU_JAL
 	cpu.GPR(31) = cpu.current_PC + 8
-	cpu.current_PC And= &hF0000000
-	cpu.current_PC or= Target + 4
+	cpu.delay_slot_PC = cpu.current_PC And &hF0000000
+	cpu.delay_slot_PC or= Target + 4
+	cpu.branch_queued = 2
 End Sub
 Sub CPU_JALR
 	cpu.GPR(RD) = cpu.current_PC + 8
@@ -259,6 +332,8 @@ End Sub
 
 Sub CPU_MTC0
 	cop0.reg(RD) = cpu.GPR(RT)
+	Print "COP0 Reg: " & RD
+	Print "CPU REG: " & RT
 End Sub
 Sub CPU_MTC2
 	gte.gd(RD) = cpu.GPR(RT)	
@@ -386,7 +461,29 @@ Sub CPU_XORI
 End Sub
 
 Sub decodeInstruction
-	If cpu.opcode <> 0 Then 
+	'If cpu.opcode <> 0 Then 
+	Select Case (cpu.opcode Shr 21)
+		Case &h242 'CFZ0
+			cpu.Operation = "CFC2"
+			CPU_CFC2
+		Case &h246 'CTC2
+			cpu.Operation = "CTC2"
+			CPU_CTC2
+		Case &h204 'MTC0
+			cpu.Operation = "MTC0"
+			CPU_MTC0
+		Case &h244 'MTC2
+			cpu.Operation = "MTC2"
+			CPU_MTC2
+	End Select
+	Select Case (cpu.opcode Shr 25)
+		Case &h21
+			cpu.Operation = "COP0"
+			CPU_COP0
+		Case &h25
+			cpu.Operation = "COP2"
+			CPU_COP2
+	End Select
 	Select Case (cpu.opcode Shr 26)
 		Case &h0 'Special
 			Select Case(cpu.opcode And &h3F)
@@ -508,6 +605,9 @@ Sub decodeInstruction
 		Case &h7
 			cpu.operation = "BGTZ"
 			CPU_BGTZ
+		Case &h8
+			cpu.operation = "ADDI"
+			CPU_ADDI
 		Case &h9
 			cpu.operation = "ADDIU"
 			CPU_ADDIU
@@ -529,50 +629,6 @@ Sub decodeInstruction
 		Case &hF
 			cpu.operation  = "LUI"
 			CPU_LUI
-		Case &h10 To &h12
-			If (cpu.opcode Shr 25) And &h1 = 0 Then
-			Select Case (cpu.opcode Shr 21) And &h1f
-				Case &h0 'MFCz
-				If (cpu.opcode And &h3F) = &h10 Then
-					cpu.operation = "MFC0"
-					CPU_MFC0
-				ElseIf (cpu.opcode And &h3F) = &h12 Then
-					cpu.operation = "MFC2"
-					CPU_MFC2
-				EndIf
-					
-				Case &h2 'CFCz
-					If (cpu.opcode And &h3F) = &h12 Then
-						cpu.operation = "CFC2"
-						CPU_CFC2
-					EndIf
-					
-				Case &he 'CTCz
-					If (cpu.opcode And &h3F) = &h12 Then
-						cpu.operation = "CTC2"
-						CPU_CTC2
-					EndIf
-					
-				Case &h64 'MTCz
-					
-				If (cpu.opcode And &h3F) = &h10 Then
-					cpu.operation = "MTC0"
-					CPU_MTC0
-				ElseIf (cpu.opcode And &h3F) = &h12 Then
-					cpu.operation = "MTC2"
-					CPU_MTC2
-				EndIf
-					
-			End Select
-			Else 'COPz
-				If (cpu.opcode And &h3F) = &h10 Then
-					cpu.operation = "COP0"
-					CPU_COP0
-				ElseIf (cpu.opcode And &h3F) = &h12 Then
-					cpu.operation = "COP2"
-					CPU_COP2
-				EndIf
-			End If
 		Case &h20
 			cpu.operation = "LB"
 			CPU_LB
@@ -616,8 +672,8 @@ Sub decodeInstruction
 			cpu.operation = "SWC2"
 			CPU_SWC2
 	End Select
-	Else cpu.operation = "NOP" 
-	endif
+	'Else cpu.operation = "NOP" 
+	'endif
 End Sub
 
 

@@ -87,6 +87,7 @@ End Sub
 Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 	addr And= &hFFFF
 	Select Case addr
+		Case &h0130	To &h0133 'Cache Control 
 		Case &h1000 To &h1020 'Memory Control 1
 		Case &h1040 To &h105F 'Peripheral IO
 		Case &h1061 			 'Memory Control 2
@@ -116,6 +117,9 @@ Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As uinteger
 			cpu.dCache(addr And &h3FF) = value
 		Case &h1F801000 To &h1F801FFC 'I/O Ports
 			Print "Writing I/O Port at: " & Hex(addr)
+			writeIO(addr, value)
+		Case &hFFFE0130 To &hFFFE0133
+			Print "Writing Cache Control " & Hex(addr)
 			writeIO(addr, value)
 		Case Else 
 			Print "WHY ARE YOU WRITING HERE STUPID THING!"
