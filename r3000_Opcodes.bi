@@ -193,7 +193,6 @@ Sub CPU_BLTZAl
 	cpu.GPR(31) = cpu.current_PC + 8
 End Sub
 Sub CPU_BNE
-
 	'Print "ADDR " & Hex(addr)
 	If cpu.GPR(RS) <> cpu.GPR(RT) Then 
 		cpu.branch_queued = 2
@@ -204,7 +203,6 @@ Sub CPU_BNE
 		cpu.delay_slot_PC = cpu.current_PC - addr
 	EndIf
 	EndIf
-
 End Sub
 Sub CPU_BREAK
 	'Breakpoint Exception
@@ -223,10 +221,18 @@ Sub CPU_CTC2
 	gte.gc(RD) = cpu.GPR(RT)
 End Sub
 Sub CPU_DIV
-
+	If cpu.GPR(RT) <> 0 Then 
+		Dim As Integer dRS = CInt(cpu.GPR(RS))
+		Dim As Integer dRT = CInt(cpu.GPR(RT))
+		cpu.LO = dRS / dRT
+		cpu.HI = dRS Mod dRT
+	EndIf
 End Sub
 Sub CPU_DIVU
-
+	If cpu.GPR(RT) <> 0 Then 
+		cpu.LO = cpu.GPR(RS) / cpu.GPR(RT)
+		cpu.HI = cpu.GPR(RT) Mod cpu.GPR(RT)
+	EndIf 
 End Sub
 Sub CPU_J
 	cpu.delay_slot_PC = cpu.current_PC And &hF0000000
@@ -362,11 +368,17 @@ Sub CPU_MTLO
 End Sub
 
 Sub CPU_MULT
-	
+	Dim As Integer mRS = CInt(cpu.GPR(RS))
+	Dim As Integer mRT = CInt(cpu.GPR(RT))
+	Dim As ULongInt result = mRS * mRT
+	cpu.LO = result And &hFFFFFFFF
+	cpu.HI = (result Shr 32) And &hFFFFFFFF 
 End Sub
 
 Sub CPU_MULTU
-	
+	dim as ulongint result = cpu.GPR(RS) * cpu.GPR(RT)
+	cpu.LO = result And &hFFFFFFFF
+	cpu.HI = (result Shr 32) And &hFFFFFFFF 
 End Sub
 
 Sub CPU_NOR 'Maybe correct????
