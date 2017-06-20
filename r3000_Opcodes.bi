@@ -241,39 +241,52 @@ Sub CPU_JAL
 End Sub
 Sub CPU_JALR
 	cpu.GPR(RD) = cpu.current_PC + 8
-	cpu.current_PC += cpu.GPR(RS)
+	cpu.current_PC = cpu.GPR(RS)
 End Sub
 Sub CPU_JR
-	cpu.current_PC += cpu.GPR(RS)
+	If cpu.GPR(RS) >= &h80000000 Then
+		 Dim As UInteger temp = &h100000000 - cpu.GPR(RS)
+		 cpu.GPR(RT) = imm - temp
+	Else 
+		cpu.GPR(RT) = imm + cpu.GPR(RS)
+	EndIf
+	Print RS
+	Print Hex(cpu.GPR(RS))
+	Print Hex(cpu.GPR(RT))
+	sleep
 End Sub
 
 Sub CPU_LB
-	Dim As Integer temp = imm + cpu.GPR(RS) 'RS shares the same position with base
-	Dim As Integer value = ReadByte(temp)
+	Dim As UInteger temp = imm + cpu.GPR(RS)
+	Dim As Integer addr = CInt(temp) 
+	Dim As Integer value = ReadByte(addr)
 	cpu.GPR(RT) = value
 End Sub
 
 Sub CPU_LBU
-	Dim As Integer temp = imm + cpu.GPR(RS)
-	cpu.GPR(RT) = ReadByte(temp)
+	Dim As UInteger temp = imm + cpu.GPR(RS)
+	Dim As Integer addr = CInt(temp) 
+	cpu.GPR(RT) = ReadByte(addr)
 End Sub
 
 Sub CPU_LH
-	Dim As Integer temp = imm + cpu.GPR(RS)
-	Dim As Byte test = temp And 1
+	Dim As UInteger temp = imm + cpu.GPR(RS)
+	Dim As Integer addr = CInt(temp) 
+	Dim As Byte test = addr And 1
 	Dim load As integer
 	For i As uInteger = 0 To 1
-	load Or= (ReadByte(temp+i) Shl i*8)
+	load Or= (ReadByte(addr+i) Shl i*8)
 	Next
 	If test = 0 Then cpu.GPR(RT) = load
 End Sub
 
 Sub CPU_LHU
-	Dim As Integer temp = imm + cpu.GPR(RS)
-	Dim As Byte test = temp And 1
+	Dim As UInteger temp = imm + cpu.GPR(RS)
+	Dim As Integer addr = CInt(temp) 
+	Dim As Byte test = addr And 1
 	Dim load As uinteger
 	For i As uInteger = 0 To 1
-	load Or= (cpu.memory(temp+i) Shl i*8)
+	load Or= (cpu.memory(addr+i) Shl i*8)
 	Next
 	If test = 0 Then cpu.GPR(RT) = load
 End Sub
@@ -282,12 +295,13 @@ Sub CPU_LUI
 End Sub
 
 Sub CPU_LW
-	Dim As Integer temp = imm + cpu.GPR(RS)
-	Dim As Byte test = temp And 1
+	Dim As UInteger temp = imm + cpu.GPR(RS)
+	Dim As Integer addr = CInt(temp)  
+	Dim As Byte test = addr And 1
 	cpu.GPR(RT) = 0 
 	Dim load As integer
 	For i As Integer = 0 To 3
-	load or= (ReadByte(temp+(3-i)) Shl (24-(i*8)))
+	load or= (ReadByte(addr+(3-i)) Shl (24-(i*8)))
 	Print Hex(load)
 	Next
 	cpu.GPR(RT) = load
@@ -368,20 +382,21 @@ Sub CPU_ORI
 	cpu.GPR(RT)= cpu.GPR(RS) Or imm
 End Sub
 Sub CPU_SB
-	Dim As Integer temp = imm + cpu.GPR(RS) 'RS shares the same position with base
+	Dim As UInteger temp = imm + cpu.GPR(RS)
+	Dim As Integer addr = CInt(temp) 
 	Dim As Integer value = cpu.GPR(RT) And &hFF
-	WriteByte(temp,value)
+	WriteByte(addr,value)
 End Sub
 
 Sub CPU_SH
 	'I'm not confident with this one
-	Dim As Integer temp = imm + cpu.GPR(RS)
-	Dim As Byte test = temp And 1
+	Dim As UInteger temp = imm + cpu.GPR(RS)
+	Dim As Integer addr = CInt(temp) 
 	Dim load As Byte
 	load = cpu.GPR(RT) And &hFF
-	If test = 0 Then WriteByte(temp,load)
+	If addr = 0 Then WriteByte(addr,load)
 	load = ((cpu.GPR(RT) Shr 8) And &hFF)
-	If test = 0 Then WriteByte(temp+1,load)
+	If addr = 0 Then WriteByte(addr+1,load)
 End Sub
 Sub CPU_SLL
 	cpu.GPR(RD) = cpu.GPR(RT) Shl SA
@@ -429,12 +444,13 @@ End Sub
 
 Sub CPU_SW
 	'I'm not confident with this one
-	Dim As Integer temp = imm + cpu.GPR(RS)
+	Dim As UInteger temp = imm + cpu.GPR(RS)
+	Dim As Integer addr = CInt(temp) 
 	Dim As Byte test = temp And 1
 	Dim load As Byte
 	For i As Integer = 0 To 3
 		load = ((cpu.GPR(RT) Shr i*8) And &hFF)
-		WriteByte(temp+i,load)
+		WriteByte(addr+i,load)
 	Next	
 End Sub
 

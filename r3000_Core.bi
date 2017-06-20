@@ -77,6 +77,8 @@ Sub fetchInstruction 'Copies 4 bytes to a 32-bit opcode variable
 			cpu.opcode Or= (cpu.bios((cpu.current_PC+i) And &h7FFFF) Shl i*8)
 			Next
 	'''''''''''''''''''''''''''''''''''''''''''''''''''''
+		Case Else 
+			Sleep
 	End Select 
 
 End Sub
@@ -109,9 +111,9 @@ Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As uinteger
 	Select Case addr
 		Case &h0 To (KUSEG*8) 'KUSEG
 			cpu.memory(addr) = value
-		Case KSEG1 To KSEG1+(KUSEG*8)'KSEG0
+		Case KSEG1 To (KSEG1+(KUSEG*8))'KSEG0
 		 	cpu.memory(addr And &h1FFFFF) = value
-		Case KSEG1 To KSEG1+(KUSEG*8) 'KSEG1
+		Case KSEG1 To (KSEG1+(KUSEG*8)) 'KSEG1
 			cpu.memory(addr And &h1FFFFF) = value
 		Case &h1F800000 To &h1F8003FF 'Scratchpad
 			cpu.dCache(addr And &h3FF) = value
