@@ -66,12 +66,8 @@ Declare Sub CPU_CFC1 'CFCz
 Declare Sub CPU_CFC2 'CFCz
 Declare Sub CPU_CFC3 'CFCz
 Declare Sub CPU_COP0 'COPz
-Declare Sub CPU_COP1 'COPz
 Declare Sub CPU_COP2 'COPz
-Declare Sub CPU_COP3 'COPz
-Declare Sub CPU_CTC1 'CTCz
 Declare Sub CPU_CTC2 'CTCz
-Declare Sub CPU_CTC3 'CTCz
 Declare Sub CPU_LWC2
 Declare Sub CPU_MFC0 'MFCz
 Declare Sub CPU_MFC2 'MFCz
@@ -82,7 +78,7 @@ Declare Sub decode_instruction
 
 Sub CPU_ADD
 	cpu.GPR(RD) = cpu.GPR(RS) + cpu.GPR(RT)
-	Check_Overflow
+	checkOverflow
 End Sub
 Sub CPU_ADDI
 	'Dim As Integer value = imm
@@ -92,7 +88,7 @@ Sub CPU_ADDI
 	Else
 	cpu.GPR(RT) = cpu.GPR(RS) + imm
 	endif
-	Check_Overflow
+	checkOverflow
 End Sub
 Sub CPU_ADDIU
 	Dim As Integer temp = imm
@@ -206,19 +202,44 @@ Sub CPU_BNE
 End Sub
 Sub CPU_BREAK
 	'Breakpoint Exception
+	Exception(0,9,0)
 End Sub
-
 Sub CPU_CFC2
-	cpu.GPR(RT) = gte.gc(RD)
+	Dim As UByte temp = ((SR Shr 30) And 1)
+	If temp <> 0 Then 
+		cpu.GPR(RT) = gte.gc(RD)
+	Else 
+		Exception(0,11,0) 'COP2 Unusable 
+	EndIf
 End Sub
 Sub CPU_COP0
-
+Dim As UByte KUc = SR And &h2 'Check for Kernel Mode
+If KUc = 2 Then 
+	Dim As UByte temp = ((SR Shr 28) And 1)
+	If temp <> 0 Then 
+		'Execute Coprocessor Function
+	Else 
+		Exception(0,11,0) 'COP0 Unusable 
+	EndIf
+Else
+	'Execute Coprocessor Function
+endif
 End Sub
 Sub CPU_COP2
-
+	Dim As UByte temp = ((SR Shr 30) And 1) 
+	If temp <> 0 Then
+		'Execute Coprocessor Function
+	Else
+		Exception(0,11,0) 'COP2 Unusable
+	EndIf
 End Sub
 Sub CPU_CTC2
-	gte.gc(RD) = cpu.GPR(RT)
+	Dim As UByte temp = ((SR Shr 30) And 1) 
+	If temp <> 0 Then
+		gte.gc(RD) = cpu.GPR(RT)
+	Else
+		Exception(0,11,0) 'COP2 Unusable
+	EndIf
 End Sub
 Sub CPU_DIV
 	If cpu.GPR(RT) <> 0 Then 
@@ -261,20 +282,17 @@ Sub CPU_JR
 	Print Hex(cpu.GPR(RT))
 	sleep
 End Sub
-
 Sub CPU_LB
 	Dim As UInteger temp = imm + cpu.GPR(RS)
 	Dim As Integer addr = CInt(temp) 
 	Dim As Integer value = ReadByte(addr)
 	cpu.GPR(RT) = value
 End Sub
-
 Sub CPU_LBU
 	Dim As UInteger temp = imm + cpu.GPR(RS)
 	Dim As Integer addr = CInt(temp) 
 	cpu.GPR(RT) = ReadByte(addr)
 End Sub
-
 Sub CPU_LH
 	Dim As UInteger temp = imm + cpu.GPR(RS)
 	Dim As Integer addr = CInt(temp) 
@@ -285,7 +303,6 @@ Sub CPU_LH
 	Next
 	If test = 0 Then cpu.GPR(RT) = load
 End Sub
-
 Sub CPU_LHU
 	Dim As UInteger temp = imm + cpu.GPR(RS)
 	Dim As Integer addr = CInt(temp) 
@@ -299,7 +316,6 @@ End Sub
 Sub CPU_LUI 
 	cpu.GPR(RT) = (imm Shl 16)
 End Sub
-
 Sub CPU_LW
 	Dim As UInteger temp = imm + cpu.GPR(RS)
 	Dim As Integer addr = CInt(temp)  
@@ -312,36 +328,51 @@ Sub CPU_LW
 	Next
 	cpu.GPR(RT) = load
 End Sub
-
 Sub CPU_LWC2
-	Dim As Integer temp = Offset 
-	temp += cpu.GPR(RS)
-	Dim As Byte test = temp And 1
-	cpu.GPR(RT) = 0 
-	Dim load As integer
-	For i As Integer = 0 To 3
-	load Or= (cpu.memory(temp+i) Shl i*8)
-	Next
-	gte.gd(RT) = load
+	Dim As UByte temp = ((SR Shr 30) And 1) 
+	If temp <> 0 Then 
+		Dim As Integer temp = Offset 
+		temp += cpu.GPR(RS)
+		Dim As Byte test = temp And 1
+		cpu.GPR(RT) = 0 
+		Dim load As integer
+		For i As Integer = 0 To 3
+			load Or= (cpu.memory(temp+i) Shl i*8)
+		Next
+		gte.gd(RT) = load	
+	Else 
+		Exception(0,11,0) 'COP2 Unusable 
+	EndIf
 End Sub
 
 Sub CPU_LWL
 	
 End Sub
-
 Sub CPU_LWR
 	
 End Sub
-
-
-Sub CPU_MFC0
+Sub CPU_MFC0	
+Dim As UByte KUc = SR And &h2 'Check for Kernel Mode
+If  KUC = 2 Then 
+	Print "SR: " & SR
+	Dim As UByte temp = ((SR Shr 28) And 1) 
+	If temp <> 0 Then 
+		cpu.GPR(RT) = cop0.reg(RD)
+	Else 
+		Exception(0,11,0) 'COP0 Unusable 
+	EndIf
+Else 
 	cpu.GPR(RT) = cop0.reg(RD)
+endif
 End Sub
-
 Sub CPU_MFC2
-	cpu.GPR(RT) = gte.gd(RD)
+	Dim As UByte temp = ((SR Shr 30) And 1) 
+	If temp <> 0 Then 
+		cpu.GPR(RT) = gte.gd(RD)	
+	Else 
+		Exception(0,11,0) 'COP2 Unusable 
+	EndIf
 End Sub
-
 Sub CPU_MFHI
 	cpu.GPR(RD) = cpu.HI
 End Sub
@@ -349,24 +380,39 @@ End Sub
 Sub CPU_MFLO
 	cpu.GPR(RD) = cpu.HI
 End Sub
-
 Sub CPU_MTC0
+Dim As UByte KUc = SR And &h2 'Check for Kernel Mode
+If KUc = 2 Then 
+		Print "SR: " & SR
+		Print "COP0 Reg: " & RD
+		Print "CPU REG: " & RT
+		Print "MISC REG: " & RS
+		Dim As UByte temp = ((SR Shr 28) And 1)
+		If temp <> 0 Then 
+			cop0.reg(RD) = cpu.GPR(RT)
+			Print "COP0 Reg: " & RD
+			Print "CPU REG: " & RT
+		Else 
+			Exception(0,11,0) 'COP0 Unusable 
+		EndIf
+Else
 	cop0.reg(RD) = cpu.GPR(RT)
-	Print "COP0 Reg: " & RD
-	Print "CPU REG: " & RT
+endif		
 End Sub
 Sub CPU_MTC2
-	gte.gd(RD) = cpu.GPR(RT)	
+	Dim As UByte temp = ((SR Shr 30) And 1) 
+	If temp <> 0 Then 
+		gte.gd(RD) = cpu.GPR(RT)	
+	Else 
+		Exception(0,11,0) 'COP2 Unusable 
+	EndIf
 End Sub
-
 Sub CPU_MTHI
 	cpu.HI = cpu.GPR(RS)
 End Sub
-
 Sub CPU_MTLO
 	cpu.LO = cpu.GPR(RS)
 End Sub
-
 Sub CPU_MULT
 	Dim As Integer mRS = CInt(cpu.GPR(RS))
 	Dim As Integer mRT = CInt(cpu.GPR(RT))
@@ -374,13 +420,11 @@ Sub CPU_MULT
 	cpu.LO = result And &hFFFFFFFF
 	cpu.HI = (result Shr 32) And &hFFFFFFFF 
 End Sub
-
 Sub CPU_MULTU
 	dim as ulongint result = cpu.GPR(RS) * cpu.GPR(RT)
 	cpu.LO = result And &hFFFFFFFF
 	cpu.HI = (result Shr 32) And &hFFFFFFFF 
 End Sub
-
 Sub CPU_NOR 'Maybe correct????
 	Dim As UInteger tRD = (RD xor &hFFFFFFFF)
 	Dim As UInteger tRT = (RT Xor &hFFFFFFFF)
@@ -448,7 +492,7 @@ Sub CPU_SRLV
 End Sub
 Sub CPU_SUB
 	cpu.GPR(RD) = cpu.GPR(RS) - cpu.GPR(RT)
-	Check_Overflow
+	checkOverflow
 End Sub
 Sub CPU_SUBU
 	cpu.GPR(RD) = cpu.GPR(RS) - cpu.GPR(RT)
@@ -479,7 +523,7 @@ Sub CPU_SWR
 End Sub
 Sub CPU_SYSCALL
 	Dim As UInteger code = ((cpu.opcode Shr 6) And &hFFFFF)
-	Exception(code,0)
+	Exception(code,0,0)
 End Sub
 Sub CPU_XOR
 	cpu.GPR(RD) = cpu.GPR(RS) Xor cpu.GPR(RT)

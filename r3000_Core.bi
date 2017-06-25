@@ -1,4 +1,4 @@
-Declare Sub Check_Overflow
+Declare Sub checkOverflow
 Declare Sub loadBIOS
 Declare Sub validBIOS
 Declare Sub initCPU
@@ -23,10 +23,14 @@ Type cpus
 	memSize As UByte
    const Reset_Vector As UInteger = &hBFC00000
 End Type
+
 Type ports
 	memMirror As UByte '2mb or 8mb memory config
-
+	iEnable As UInteger 'Interrupt Enable - Edge Sensitive
+	iMask As UInteger 'Interrupt Mask 
 End Type
+
+
 Const As UInteger KUSEG = &h1FFFFF
 Const As UInteger KSEG0 = &h80000000
 Const As UInteger KSEG1 = &hA0000000
@@ -51,6 +55,7 @@ End Sub
 Sub initCPU
 	cpu.current_PC = &hBFC00000
 End Sub
+
 Sub fetchInstruction 'Copies 4 bytes to a 32-bit opcode variable
 	cpu.opcode = 0 'Not clearing opcode breaks things horribly! 
 	Select Case cpu.current_PC
@@ -80,12 +85,11 @@ Sub fetchInstruction 'Copies 4 bytes to a 32-bit opcode variable
 		Case Else 
 			Sleep
 	End Select 
-
 End Sub
-
-Sub Check_Overflow
+Sub checkOverflow
 	
 End Sub
+
 Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 	addr And= &hFFFF
 	Select Case addr
@@ -96,7 +100,10 @@ Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 		port.memMirror = (value Shr 1)
 		If port.memMirror = 5 Then cpu.memSize = 8 
 		Print "Memory Size: " & cpu.memSize
-		Case &h1070 To &h1078 'Interrupt Control
+		Case &h1070 To &h1073 'interrupt Enable
+			port.iEnable or= (value Shl (24-((addr And &h3)*8))) 
+		Case &h1074 To &h1077 'Interrupt Mask
+			
 		Case &h1080 To &h10F4 'DMA Registers
 		Case &h1100 To &h1120 'Timers
 		Case &h1800 To &h1804 'CD ROM
@@ -106,6 +113,7 @@ Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 	Print port.memMirror
 	Return 0 
 End Function
+
 Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As uinteger
 	'Memory is split into a few different regions
 	Select Case addr
@@ -134,14 +142,17 @@ function ReadByte(ByVal addr As UInteger) As UInteger
 		'Memory is split into a few different regions
 		dim value as ubyte 
 	Select Case addr
-		Case &h0 To &h1FFFFF
+		Case &h0 To &h1FFFFF 'KSEG0
 			value = cpu.memory(addr) 
-		Case &h80000000 To &h801FFFFF
+		Case &h80000000 To &h801FFFFF 'KSEG0 
 		 	value = cpu.memory(addr And &h1FFFFF) 
-		Case &hA0000000 To &hA01FFFFF
+		Case &hA0000000 To &hA01FFFFF 'KSEG1
 			value = cpu.memory(addr And &h1FFFFF) 
-		Case &hBFC00000 To &hBFC7FFFF
+		Case &hBFC00000 To &hBFC7FFFF 'BIOS(Read only)
 			value = cpu.bios(addr and &h7FFFF)
+		Case &h1F801000 To &h1F801FFC 'I/O Ports
+			Print "Reading I/O Port at: " & Hex(addr)
+			writeIO(addr, value)
 		Case Else 
 			Print "DO YOU REALLY NEED THIS DATA?"
 	End Select

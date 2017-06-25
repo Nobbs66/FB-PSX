@@ -8,7 +8,7 @@ Using fb
 Declare Sub CAE
 #Include Once "debugger.bi"
 Declare Sub runCPU
-
+Dim As Integer instructions
 '#Define debug
 Sub runCPU
 	
@@ -77,6 +77,8 @@ Print "T1: " & Hex(cpu.GPR(9))
 Print Hex(cpu.memory(0)) & " " & Hex(cpu.memory(1)) & " " & Hex(cpu.memory(2)) & " " & Hex(cpu.memory(3))
 #EndIf
 
-
+cpu.GPR(0) = 0
+instructions += 1
+Print "Instructions Executed " &  instructions
 Loop While Not MultiKey(SC_ESCAPE)
 
