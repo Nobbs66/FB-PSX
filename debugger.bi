@@ -1,6 +1,7 @@
 Declare Sub modifyRAM
 Declare Sub modfyGPR
 Declare Sub menu
+Declare Sub breakPoint
 Sub modifyRAM
 	Dim As UInteger addr
 	Dim As UByte value
@@ -19,4 +20,9 @@ Sub menu
 	Dim As String in
 	Input "Enter a command ", in
 	If in = "Exit" Then CAE
+End Sub
+Sub breakPoint
+	Dim As UInteger break
+'	Input "Enter a breakpoint ",cpu.bPoint
+'	Print "Breakpoint set at: " & cpu.bPoint
 End Sub

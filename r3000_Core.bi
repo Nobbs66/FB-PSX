@@ -12,29 +12,47 @@ Type cpus
 	dCache(&h400) As UByte
 	GPR(32) As UInteger
 	current_PC As UInteger
-	old_PC As UInteger
+	delayReg As UByte
+	delayValue As UInteger
+	delayFlag As UByte
+	'ldQueue As UByte 'THis shouldn't need to be more than a byte unless we're doing more than 255 consecutive loads. 
 	delay_slot_PC As UInteger 
 	branch_queued As UByte
 	HI As UInteger
+	breakPoint As UByte
 	LO As UInteger
 	bios(&h80000) As UByte
 	opcode As UInteger
 	Operation As String
 	memSize As UByte
+	delayLatch As UByte
+	ophistory(0 To &hFF) As String 
    const Reset_Vector As UInteger = &hBFC00000
+   storeAddress As UByte
+   storedAddress As UInteger
+   storeValue As UInteger
+End Type
+
+
+Type cop0s
+	reg(0 To &h31) As UInteger 
 End Type
 
 Type ports
 	memMirror As UByte '2mb or 8mb memory config
 	iEnable As UInteger 'Interrupt Enable - Edge Sensitive
 	iMask As UInteger 'Interrupt Mask 
+	cacheCtrl As UInteger 
 End Type
 
 
 Const As UInteger KUSEG = &h1FFFFF
 Const As UInteger KSEG0 = &h80000000
 Const As UInteger KSEG1 = &hA0000000
+Open "log.txt" For Output As #99
+
 Dim Shared cpu As cpus
+Dim Shared cop0 As cop0s
 Dim Shared port As ports
 #Define RD  	((cpu.opcode Shr 11) And &h1F)
 #Define RT  	((cpu.opcode Shr 16) And &h1F)
@@ -44,16 +62,34 @@ Dim Shared port As ports
 #Define Offset ((cpu.opcode And &hFFFF) Shl 2)
 #Define Target ((cpu.opcode And &h3FFFFFF) Shl 2)
 
+#Define BPC 		(cop0.reg(3)) 	'Breakpoint on executed 
+#Define BDA 		(cop0.reg(5)) 	'Breakpoint on data access
+#Define JUMPDEST 	(cop0.reg(6)) 	'Randomly memorised jump address
+#Define DCIC 		(cop0.reg(7)) 	'Breakpoint Control
+#Define BadVaddr 	(cop0.reg(8)) 	'Bad virtual adsdress
+#Define BDAM 		(cop0.reg(9)) 	'Data access breakpoint mask
+#Define BPCM 		(cop0.reg(11)) 'Execute breakpoint mask
+#Define SR 			(cop0.reg(12)) 'Status register
+#Define CAUSE 		(cop0.reg(13)) 'Exception Cause
+#Define EPC 		(cop0.reg(14)) 'Exception program counter
+#Define PRID 		(cop0.reg(15)) 'Processor ID
+
+
+#Define BEV (((cop0.reg(12) Shr 22) And 1)) 'Bootstrap Exception Vector 
+
 Sub loadBIOS
-'Open "BIOS\SCPH1001.BIN" for binary as #1
-Open "BIOS\SCPH1001.BIN" For Binary As #1
+Open "BIOS\SCPH1001.BIN" for binary as #1
+'Open "BIOS\SCPH1001.BIN" For Binary As #1
+'Open "BIOS\LDTEST.BIN" For Binary As #1
 for i as uinteger  = 0 to &h80000
 get #1, i, cpu.bios(i-1)
 Next
 close #1
 End Sub
 Sub initCPU
-	cpu.current_PC = &hBFC00000
+	'cpu.current_PC = &hBFC00000
+	cpu.current_PC = cpu.Reset_Vector
+	cop0.reg(12) Or= &h400000 'Set BEV
 End Sub
 
 Sub fetchInstruction 'Copies 4 bytes to a 32-bit opcode variable
@@ -65,16 +101,16 @@ Sub fetchInstruction 'Copies 4 bytes to a 32-bit opcode variable
 		cpu.opcode Or= (cpu.memory(cpu.current_PC+i) Shl i*8)
 		Next
 	'''''''''''''''''''''''''''''''''''''''''''''''
-		Case &h80000000 To &h801FFFFF
-		cpu.current_PC and= &h1FFFFF
-			For i As Integer = 0 To 3
-			cpu.opcode Or= (cpu.memory(cpu.current_PC+i) Shl i*8)
-			Next
+		Case &h80000000 To &h803FFFFF
+			Dim As UInteger addr = cpu.current_PC And &h1FFFFF
+				For i As Integer = 0 To &hF
+				Print Hex(cpu.memory(addr + i))
+				Next
 	'''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &hA0000000 To &hA01FFFFF
 		cpu.current_PC and= &h1FFFFF
 			For i As Integer = 0 To 3
-			cpu.opcode Or= (cpu.memory(cpu.current_PC+i) Shl i*8)
+			cpu.opcode Or= (cpu.memory((cpu.current_PC+i)And &h1FFFFF) Shl i*8)
 			Next
 	'''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &hBFC00000 To &hBFC7FFFF
@@ -83,17 +119,20 @@ Sub fetchInstruction 'Copies 4 bytes to a 32-bit opcode variable
 			Next
 	'''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case Else 
-			Sleep
+			Print "Instruction Fetch Failure" 
 	End Select 
 End Sub
 Sub checkOverflow
-	
+	'Overflow check not implemented
 End Sub
-
 Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
+	If (addr Shr 16) = &h1F80 Then 
 	addr And= &hFFFF
 	Select Case addr
 		Case &h0130	To &h0133 'Cache Control 
+			'Print "Addr: " & Hex(addr)
+			'Print "Data: " & Hex(value)
+			'sleep
 		Case &h1000 To &h1020 'Memory Control 1
 		Case &h1040 To &h105F 'Peripheral IO
 		Case &h1061 			 'Memory Control 2
@@ -110,21 +149,37 @@ Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 		Case &h1820 To &h1828 'MDEC
 		Case &hC000 To &h1FFF 'SPU
 	End Select
+	Else
+	addr And= &hFFFF
+	Select Case addr
+		Case &h130 To &h133 'Cache Control 
+			Print "Addr: " & addr
+			Print "Value: " & value
+			'sleep
+	End Select
+	endif
 	Print port.memMirror
 	Return 0 
 End Function
 
 Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As uinteger
 	'Memory is split into a few different regions
+	Dim As UByte IsC = ((SR Shr 16) And 1)
+	If IsC = 0 Then 
 	Select Case addr
-		Case &h0 To (KUSEG*8) 'KUSEG
-			cpu.memory(addr) = value
-		Case KSEG1 To (KSEG1+(KUSEG*8))'KSEG0
-		 	cpu.memory(addr And &h1FFFFF) = value
-		Case KSEG1 To (KSEG1+(KUSEG*8)) 'KSEG1
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		Case &h0 To &h7FFFFF 'KUSEG
 			cpu.memory(addr And &h1FFFFF) = value
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		Case &h80000000 To &h807FFFFF 'KSEG0
+		 	cpu.memory(addr And &h1FFFFF) = value
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''		 	
+		Case &hA0000000 To &hA07FFFFF 'KSEG1
+			cpu.memory(addr And &h1FFFFF) = value
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''			
 		Case &h1F800000 To &h1F8003FF 'Scratchpad
 			cpu.dCache(addr And &h3FF) = value
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &h1F801000 To &h1F801FFC 'I/O Ports
 			Print "Writing I/O Port at: " & Hex(addr)
 			writeIO(addr, value)
@@ -132,10 +187,14 @@ Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As uinteger
 			Print "Writing Cache Control " & Hex(addr)
 			writeIO(addr, value)
 		Case Else 
-			Print "WHY ARE YOU WRITING HERE STUPID THING!"
+			Print "Bad write"
 			Print "ADDRESS: " & Hex(addr)
 			Print "DATA: " & Hex(value)
 	End Select
+	Else
+	cpu.iCache(addr) = value 
+	EndIf
+
 	return 0 
 End Function
 function ReadByte(ByVal addr As UInteger) As UInteger
@@ -154,7 +213,7 @@ function ReadByte(ByVal addr As UInteger) As UInteger
 			Print "Reading I/O Port at: " & Hex(addr)
 			writeIO(addr, value)
 		Case Else 
-			Print "DO YOU REALLY NEED THIS DATA?"
+			Print "Bad Read Address"
 	End Select
 	return value
 End Function

@@ -9,9 +9,14 @@ Declare Sub CAE
 #Include Once "debugger.bi"
 Declare Sub runCPU
 Dim As Integer instructions
-'#Define debug
+#Define debug
+declare sub writeLog
+sub writeLog
+print #99, hex(cpu.current_PC) & ": " &  cpu.Operation & ": " & Hex(RS) & ", " & Hex(RT) & ", " & Hex(imm) 
+If cpu.storeAddress = 1 Then Print #99, Hex(cpu.storedAddress)
+Print #99, "-----------------------------------"
+end Sub
 Sub runCPU
-	
 'Suspect Branch delay implementation
 If cpu.branch_queued = 1 Then
 	cpu.current_PC = cpu.delay_slot_PC
@@ -33,14 +38,12 @@ Sub CAE 'Cleanup and Exit
 	Sleep 1000
 	end
 End Sub
-
 ''''''''''''Initialize Emu'''''''''''''
 '''''''''''''''''''''''''''''''''''''''
 loadBIOS 
 initCPU
-If cpu.bios(0) = &h13 Then ScreenRes(600,800,32)
-''''''''''''''Main Loop''''''''''''''''
-'''''''''''''''''''''''''''''''''''''''
+ScreenRes(600,800,32)
+
 Do 
 	cls
 	Print "Press S to start"
@@ -50,9 +53,8 @@ Cls
 
 'Main loop
 Do 
-	
 runCPU
-
+writeLog
 
 If MultiKey(SC_R) Then 
 	modifyGPR
@@ -66,6 +68,10 @@ If MultiKey(SC_C) Then
 	menu
 	Sleep 1000
 EndIf
+If MultiKey(SC_B) Then 
+	breakPoint
+	Sleep 1000
+EndIf
 
 
 
@@ -77,8 +83,13 @@ Print "T1: " & Hex(cpu.GPR(9))
 Print Hex(cpu.memory(0)) & " " & Hex(cpu.memory(1)) & " " & Hex(cpu.memory(2)) & " " & Hex(cpu.memory(3))
 #EndIf
 
+
+
 cpu.GPR(0) = 0
 instructions += 1
+
+cpu.storeAddress = 0 
+'If cpu.current_PC >= cpu.bPoint Then sleep 
 Print "Instructions Executed " &  instructions
 Loop While Not MultiKey(SC_ESCAPE)
 

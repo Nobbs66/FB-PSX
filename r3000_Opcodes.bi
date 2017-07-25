@@ -280,7 +280,7 @@ Sub CPU_JR
 	Print RS
 	Print Hex(cpu.GPR(RS))
 	Print Hex(cpu.GPR(RT))
-	sleep
+
 End Sub
 Sub CPU_LB
 	Dim As UInteger temp = imm + cpu.GPR(RS)
@@ -442,6 +442,12 @@ Sub CPU_SB
 	Dim As Integer addr = CInt(temp) 
 	Dim As Integer value = cpu.GPR(RT) And &hFF
 	WriteByte(addr,value)
+	cpu.storeAddress = 1
+	cpu.storedAddress = addr
+	Print "Addr: " & Hex(addr)
+	Print "Value: " & Hex(value)
+	'cpu.breakPoint = 1
+	'Sleep
 End Sub
 
 Sub CPU_SH
@@ -449,10 +455,16 @@ Sub CPU_SH
 	Dim As UInteger temp = imm + cpu.GPR(RS)
 	Dim As Integer addr = CInt(temp) 
 	Dim load As Byte
-	load = cpu.GPR(RT) And &hFF
-	If addr = 0 Then WriteByte(addr,load)
-	load = ((cpu.GPR(RT) Shr 8) And &hFF)
-	If addr = 0 Then WriteByte(addr+1,load)
+	cpu.storeAddress = 1
+	cpu.storedAddress = addr
+	For i As Integer = 0 To 1
+		load = ((cpu.GPR(RT) Shr i*8) And &hFF)
+		WriteByte(addr+i,load)
+		Print "Addr: " & Hex(addr+i)
+		Print "Value: " & Hex(load)
+	Next
+	cpu.breakPoint = 1
+'	Sleep
 End Sub
 Sub CPU_SLL
 	cpu.GPR(RD) = cpu.GPR(RT) Shl SA
@@ -507,23 +519,33 @@ Sub CPU_SW
 	For i As Integer = 0 To 3
 		load = ((cpu.GPR(RT) Shr i*8) And &hFF)
 		WriteByte(addr+i,load)
-	Next	
+		Print "Addr: " & Hex(addr+i)
+		Print "Value: " & Hex(load)
+		cpu.storeValue = load 
+		Print #99, "Address: " & Hex(addr) & " = " & Hex(load) 
+	Next
 End Sub
 
 Sub CPU_SWC2
-	
+	Print "Unimplemented Op"
+	Beep
+	Sleep
 End Sub
 
 Sub CPU_SWL
-	
+	Print "Unimplemented Op"
+	Beep
+	sleep
 End Sub
 
 Sub CPU_SWR
-	
+	Print "Unimplemented Op"
+	Beep
+	Sleep
 End Sub
 Sub CPU_SYSCALL
 	Dim As UInteger code = ((cpu.opcode Shr 6) And &hFFFFF)
-	Exception(code,0,0)
+	Exception(code,8,0)
 End Sub
 Sub CPU_XOR
 	cpu.GPR(RD) = cpu.GPR(RS) Xor cpu.GPR(RT)
