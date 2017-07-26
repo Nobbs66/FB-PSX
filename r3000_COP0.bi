@@ -25,6 +25,7 @@ Function Exception(ByVal syscall As UInteger, ByVal eType As UByte, ByVal addr A
 	CAUSE = eType
 	cpu.current_PC = handler - 4
 	Print "SR: " & BEV
+	Return 0 
 End Function
 Sub checkInterrupt
 	Dim As UByte srMask = ((SR Shr 8) And &hF)

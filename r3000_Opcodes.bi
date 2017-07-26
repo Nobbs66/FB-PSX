@@ -82,16 +82,13 @@ Sub CPU_ADD
 End Sub
 Sub CPU_ADDI
 	'Dim As Integer value = imm
-	Print "ADDI " 
-	If RT = RS Then 
-	cpu.GPR(RT) += imm
-	Else
-	cpu.GPR(RT) = cpu.GPR(RS) + imm
-	endif
+	Dim As Integer temp = CShort(imm)
+	cpu.GPR(RT) = cpu.GPR(RS) + temp
 	checkOverflow
 End Sub
 Sub CPU_ADDIU
-	Dim As Integer temp = imm
+	Dim As Integer temp = Cshort(imm)
+	Print #99, Hex(temp)
 	cpu.GPR(RT) = temp + cpu.GPR(RS)
 End Sub
 Sub CPU_ADDU
@@ -106,98 +103,75 @@ End Sub
 Sub CPU_BEQ
 	If cpu.GPR(RS) = cpu.GPR(RT) Then 
 		cpu.branch_queued = 2
-		If imm >= &h8000 Then 
-		Dim As Short addr = &h10000 - imm
-		addr = addr Shl 2
-		addr -= 4
-		cpu.delay_slot_PC = cpu.current_PC - addr
-	EndIf
+		Dim As Short temp = CShort(imm)
+		Dim As Integer bTarget = temp Shl 2
+		cpu.delay_slot_PC = cpu.current_PC + bTarget
 	EndIf
 End Sub
 Sub CPU_BGEZ
 	Dim As uinteger test = ((cpu.GPR(RS) And &h80000000)Shr 31)
 	If test = 0 Then 
 		cpu.branch_queued = 2
-		If imm >= &h8000 Then 
-		Dim As Short addr = &h10000 - imm
-		addr = addr Shl 2
-		addr -= 4
-		cpu.delay_slot_PC = cpu.current_PC - addr
-	EndIf
+		Dim As Short temp = CShort(imm)
+		Dim As Integer bTarget = temp Shl 2
+		cpu.delay_slot_PC = cpu.current_PC + bTarget
 	EndIf
 End Sub
 Sub CPU_BGEZAL
 	Dim As UInteger test = ((cpu.GPR(RS) And &h80000000)Shr 31)
 	If test = 0 Then 
 		cpu.branch_queued = 2
-		If imm >= &h8000 Then 
-		Dim As Short addr = &h10000 - imm
-		addr = addr Shl 2
-		addr -= 4
-		cpu.delay_slot_PC = cpu.current_PC - addr
-	EndIf
+		Dim As Short temp = CShort(imm)
+		Dim As Integer bTarget = temp Shl 2
+		cpu.delay_slot_PC = cpu.current_PC + bTarget
 	EndIf
 	cpu.GPR(31) = cpu.current_PC + 8
 End Sub
 Sub CPU_BGTZ
 	Dim As UByte test = ((cpu.GPR(RS) And &h80000000)Shr 31)
-	If ((test = 0) And (RS <> 0)) Then 
+	If test = 0 then
 		cpu.branch_queued = 2
-		If imm >= &h8000 Then 
-		Dim As Short addr = &h10000 - imm
-		addr = addr Shl 2
-		addr -= 4
-		cpu.delay_slot_PC = cpu.current_PC - addr
-	EndIf
+		Dim As Short temp = CShort(imm)
+		Dim As Integer bTarget = temp Shl 2
+		cpu.delay_slot_PC = cpu.current_PC + bTarget
 	EndIf
 End Sub
 Sub CPU_BLEZ
 	Dim As UByte test = ((cpu.GPR(RS) And &h80000000)Shr 31)
 	If test = 1 Then 
 		cpu.branch_queued = 2
-		If imm >= &h8000 Then 
-		Dim As Short addr = &h10000 - imm
-		addr = addr Shl 2
-		addr -= 4
-		cpu.delay_slot_PC = cpu.current_PC - addr
-	EndIf
+		Dim As Short temp = CShort(imm)
+		Dim As Integer bTarget = temp Shl 2
+		cpu.delay_slot_PC = cpu.current_PC + bTarget
 	EndIf
 End Sub
 Sub CPU_BLTZ
 	Dim As UByte test = ((cpu.GPR(RS) And &h80000000)Shr 31)
 	If ((test = 1) And (RS <> 0)) Then 
 		cpu.branch_queued = 2
-		If imm >= &h8000 Then 
-		Dim As Short addr = &h10000 - imm
-		addr = addr Shl 2
-		addr -= 4
-		cpu.delay_slot_PC = cpu.current_PC - addr
-	EndIf
+		Dim As Short temp = CShort(imm)
+		Dim As Integer bTarget = temp Shl 2
+		cpu.delay_slot_PC = cpu.current_PC + bTarget
 	EndIf
 End Sub
 Sub CPU_BLTZAl
 	Dim As UByte test = ((cpu.GPR(RS) And &h80000000)Shr 31)
 	If ((test = 0) And (RS <> 0)) Then 
 		cpu.branch_queued = 2
-		If imm >= &h8000 Then 
-		Dim As Short addr = &h10000 - imm
-		addr = addr Shl 2
-		addr -= 4
-		cpu.delay_slot_PC = cpu.current_PC - addr
-	EndIf
+		Dim As Short temp = CShort(imm)
+		Dim As Integer bTarget = temp Shl 2
+		cpu.delay_slot_PC = cpu.current_PC + bTarget
 	EndIf
 	cpu.GPR(31) = cpu.current_PC + 8
 End Sub
 Sub CPU_BNE
 	'Print "ADDR " & Hex(addr)
+	Print #99, Hex(cpu.GPR(RS)) & " " & Hex(cpu.GPR(RT))
 	If cpu.GPR(RS) <> cpu.GPR(RT) Then 
 		cpu.branch_queued = 2
-		If imm >= &h8000 Then 
-		Dim As Short addr = &h10000 - imm
-		addr = addr Shl 2
-		addr -= 4
-		cpu.delay_slot_PC = cpu.current_PC - addr
-	EndIf
+		Dim As Short temp = CShort(imm)
+		Dim As Integer bTarget = temp Shl 2
+		cpu.delay_slot_PC = cpu.current_PC + bTarget + 4
 	EndIf
 End Sub
 Sub CPU_BREAK
@@ -257,30 +231,23 @@ Sub CPU_DIVU
 End Sub
 Sub CPU_J
 	cpu.delay_slot_PC = cpu.current_PC And &hF0000000
-	cpu.delay_slot_PC or= Target + 4
+	cpu.delay_slot_PC or= Target 
 	cpu.branch_queued = 2
 End Sub
 Sub CPU_JAL
-	cpu.GPR(31) = cpu.current_PC + 8
+	cpu.GPR(31) = cpu.current_PC + 4
 	cpu.delay_slot_PC = cpu.current_PC And &hF0000000
-	cpu.delay_slot_PC or= Target + 4
+	cpu.delay_slot_PC or= Target 
 	cpu.branch_queued = 2
 End Sub
 Sub CPU_JALR
-	cpu.GPR(RD) = cpu.current_PC + 8
+	cpu.GPR(RD) = cpu.current_PC + 4
 	cpu.current_PC = cpu.GPR(RS)
 End Sub
 Sub CPU_JR
-	If cpu.GPR(RS) >= &h80000000 Then
-		 Dim As UInteger temp = &h100000000 - cpu.GPR(RS)
-		 cpu.GPR(RT) = imm - temp
-	Else 
-		cpu.GPR(RT) = imm + cpu.GPR(RS)
-	EndIf
-	Print RS
-	Print Hex(cpu.GPR(RS))
-	Print Hex(cpu.GPR(RT))
-
+	Dim As Integer temp = CInt(cpu.GPR(RS))
+	cpu.delay_slot_PC = temp
+	cpu.branch_queued = 2
 End Sub
 Sub CPU_LB
 	Dim As UInteger temp = imm + cpu.GPR(RS)
@@ -486,6 +453,7 @@ Sub CPU_SLTIU 'Might be correct without sign extension?
 	If cpu.GPR(RS) < imm Then cpu.GPR(RT) = 1 Else cpu.GPR(RT) = 0
 End Sub
 Sub CPU_SLTU
+	Print #99, Hex(cpu.GPR(RS)) & ":" & Hex(cpu.GPR(RT))
 	If cpu.GPR(RS) < cpu.GPR(RT) Then cpu.GPR(RD) = 1 Else cpu.GPR(RD) = 0
 End Sub
 Sub CPU_SRA

@@ -12,7 +12,7 @@ Dim As Integer instructions
 #Define debug
 declare sub writeLog
 sub writeLog
-print #99, hex(cpu.current_PC) & ": " &  cpu.Operation & ": " & Hex(RS) & ", " & Hex(RT) & ", " & Hex(imm) 
+print #99, hex(cpu.current_PC-4) & ": " &  cpu.Operation & ": " & Hex(RS) & ", " & Hex(RT) & ", " & Hex(imm) 
 If cpu.storeAddress = 1 Then Print #99, Hex(cpu.storedAddress)
 Print #99, "-----------------------------------"
 end Sub
@@ -87,8 +87,8 @@ Print Hex(cpu.memory(0)) & " " & Hex(cpu.memory(1)) & " " & Hex(cpu.memory(2)) &
 
 cpu.GPR(0) = 0
 instructions += 1
-
 cpu.storeAddress = 0 
+
 'If cpu.current_PC >= cpu.bPoint Then sleep 
 Print "Instructions Executed " &  instructions
 Loop While Not MultiKey(SC_ESCAPE)

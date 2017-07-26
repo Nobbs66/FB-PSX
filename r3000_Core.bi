@@ -10,12 +10,12 @@ Type cpus
 	memory(&h200000) As UByte
 	iCache(&hFFF) As ubyte
 	dCache(&h400) As UByte
+	expansion(&h800000) As UByte
 	GPR(32) As UInteger
 	current_PC As UInteger
 	delayReg As UByte
 	delayValue As UInteger
 	delayFlag As UByte
-	'ldQueue As UByte 'THis shouldn't need to be more than a byte unless we're doing more than 255 consecutive loads. 
 	delay_slot_PC As UInteger 
 	branch_queued As UByte
 	HI As UInteger
@@ -26,11 +26,11 @@ Type cpus
 	Operation As String
 	memSize As UByte
 	delayLatch As UByte
-	ophistory(0 To &hFF) As String 
-   const Reset_Vector As UInteger = &hBFC00000
-   storeAddress As UByte
+	storeAddress As UByte
    storedAddress As UInteger
    storeValue As UInteger
+	ophistory(0 To &hFF) As String 
+   const Reset_Vector As UInteger = &hBFC00000
 End Type
 
 
@@ -97,15 +97,15 @@ Sub fetchInstruction 'Copies 4 bytes to a 32-bit opcode variable
 	Select Case cpu.current_PC
 	'''''''''''''''''''''''''''''''''''''''''''''''
 		Case 0 To &h1FFFFF
-		For i As Integer = 0 To 3
-		cpu.opcode Or= (cpu.memory(cpu.current_PC+i) Shl i*8)
-		Next
+			For i As Integer = 0 To 3
+			cpu.opcode Or= (cpu.memory(cpu.current_PC+i) Shl i*8)
+			Next
 	'''''''''''''''''''''''''''''''''''''''''''''''
 		Case &h80000000 To &h803FFFFF
 			Dim As UInteger addr = cpu.current_PC And &h1FFFFF
-				For i As Integer = 0 To &hF
+			For i As Integer = 0 To &hF
 				Print Hex(cpu.memory(addr + i))
-				Next
+			Next
 	'''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &hA0000000 To &hA01FFFFF
 		cpu.current_PC and= &h1FFFFF
@@ -119,7 +119,7 @@ Sub fetchInstruction 'Copies 4 bytes to a 32-bit opcode variable
 			Next
 	'''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case Else 
-			Print "Instruction Fetch Failure" 
+			Print #99, "Instruction Fetch Failure" 
 	End Select 
 End Sub
 Sub checkOverflow
@@ -181,15 +181,17 @@ Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As uinteger
 			cpu.dCache(addr And &h3FF) = value
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &h1F801000 To &h1F801FFC 'I/O Ports
-			Print "Writing I/O Port at: " & Hex(addr)
+			Print #99, "Writing I/O Port at: " & Hex(addr)
 			writeIO(addr, value)
+		Case &h1F000000 To &h1F7FFFFF 'Expansion Region
+			cpu.expansion(addr And &h7FFFFF) = value
 		Case &hFFFE0130 To &hFFFE0133
-			Print "Writing Cache Control " & Hex(addr)
+			Print #99, "Writing Cache Control " & Hex(addr)
 			writeIO(addr, value)
 		Case Else 
-			Print "Bad write"
-			Print "ADDRESS: " & Hex(addr)
-			Print "DATA: " & Hex(value)
+			Print #99, "Bad write"
+			Print #99, "ADDRESS: " & Hex(addr)
+			Print #99, "DATA: " & Hex(value)
 	End Select
 	Else
 	cpu.iCache(addr) = value 
@@ -201,19 +203,21 @@ function ReadByte(ByVal addr As UInteger) As UInteger
 		'Memory is split into a few different regions
 		dim value as ubyte 
 	Select Case addr
-		Case &h0 To &h1FFFFF 'KSEG0
-			value = cpu.memory(addr) 
+		Case &h0 To &h7FFFFF 'KSEG0
+			value = cpu.memory(addr And &h1FFFFF) 
 		Case &h80000000 To &h801FFFFF 'KSEG0 
 		 	value = cpu.memory(addr And &h1FFFFF) 
 		Case &hA0000000 To &hA01FFFFF 'KSEG1
 			value = cpu.memory(addr And &h1FFFFF) 
 		Case &hBFC00000 To &hBFC7FFFF 'BIOS(Read only)
 			value = cpu.bios(addr and &h7FFFF)
+		Case &h1F000000 To &h1F7FFFFF 'Expansion Port
+			value = cpu.expansion(addr And &h7FFFFF)
 		Case &h1F801000 To &h1F801FFC 'I/O Ports
-			Print "Reading I/O Port at: " & Hex(addr)
+			Print #99, "Reading I/O Port at: " & Hex(addr)
 			writeIO(addr, value)
 		Case Else 
-			Print "Bad Read Address"
+			Print #99, "Bad Read Address at: " & Hex(addr)
 	End Select
 	return value
 End Function
