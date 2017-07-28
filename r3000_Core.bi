@@ -108,7 +108,6 @@ Sub fetchInstruction 'Copies 4 bytes to a 32-bit opcode variable
 			Next
 	'''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &hA0000000 To &hA01FFFFF
-		cpu.current_PC and= &h1FFFFF
 			For i As Integer = 0 To 3
 			cpu.opcode Or= (cpu.memory((cpu.current_PC+i)And &h1FFFFF) Shl i*8)
 			Next

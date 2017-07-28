@@ -84,12 +84,14 @@ Sub CPU_ADDI
 	'Dim As Integer value = imm
 	Dim As Integer temp = CShort(imm)
 	cpu.GPR(RT) = cpu.GPR(RS) + temp
+	Print #99, Hex(cpu.GPR(RT))
 	checkOverflow
 End Sub
 Sub CPU_ADDIU
 	Dim As Integer temp = Cshort(imm)
 	Print #99, Hex(temp)
 	cpu.GPR(RT) = temp + cpu.GPR(RS)
+	Print #99, Hex(cpu.GPR(RT))
 End Sub
 Sub CPU_ADDU
 	cpu.GPR(RD) = cpu.GPR(RS) + cpu.GPR(RT)
@@ -281,7 +283,9 @@ Sub CPU_LHU
 	If test = 0 Then cpu.GPR(RT) = load
 End Sub
 Sub CPU_LUI 
+	cpu.GPR(RT) And= &hFFFF
 	cpu.GPR(RT) = (imm Shl 16)
+	Print #99, Hex(cpu.GPR(RT))
 End Sub
 Sub CPU_LW
 	Dim As UInteger temp = imm + cpu.GPR(RS)
@@ -480,9 +484,8 @@ End Sub
 
 Sub CPU_SW
 	'I'm not confident with this one
-	Dim As UInteger temp = imm + cpu.GPR(RS)
-	Dim As Integer addr = CInt(temp) 
-	Dim As Byte test = temp And 1
+	Dim As UInteger addr = cpu.GPR(RS) + Cshort(imm)
+	Dim As Byte test = addr And 1
 	Dim load As Byte
 	For i As Integer = 0 To 3
 		load = ((cpu.GPR(RT) Shr i*8) And &hFF)
