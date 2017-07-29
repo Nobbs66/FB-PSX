@@ -57,7 +57,7 @@ Dim Shared port As ports
 #Define RD  	((cpu.opcode Shr 11) And &h1F)
 #Define RT  	((cpu.opcode Shr 16) And &h1F)
 #Define RS  	((cpu.opcode Shr 21) And &h1F)
-#Define SA		(cpu.opcode And &h1f)
+#Define SA		((cpu.opcode Shr 6)  And &h1f)
 #Define imm 	(cpu.opcode And &hFFFF)
 #Define Offset ((cpu.opcode And &hFFFF) Shl 2)
 #Define Target ((cpu.opcode And &h3FFFFFF) Shl 2)
@@ -136,8 +136,8 @@ Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 		Case &h1040 To &h105F 'Peripheral IO
 		Case &h1061 			 'Memory Control 2
 		port.memMirror = (value Shr 1)
-		If port.memMirror = 5 Then cpu.memSize = 8 
-		Print "Memory Size: " & cpu.memSize
+		'If port.memMirror = 5 Then cpu.memSize = 8 
+		'Print "Memory Size: " & cpu.memSize
 		Case &h1070 To &h1073 'interrupt Enable
 			port.iEnable or= (value Shl (24-((addr And &h3)*8))) 
 		Case &h1074 To &h1077 'Interrupt Mask
@@ -152,12 +152,12 @@ Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 	addr And= &hFFFF
 	Select Case addr
 		Case &h130 To &h133 'Cache Control 
-			Print "Addr: " & addr
-			Print "Value: " & value
+			'Print "Addr: " & addr
+			'Print "Value: " & value
 			'sleep
 	End Select
 	endif
-	Print port.memMirror
+'	Print port.memMirror
 	Return 0 
 End Function
 

@@ -26,9 +26,9 @@ Else
 EndIf
 fetchInstruction
 decodeInstruction	
-Print Hex(cpu.current_PC)
-Print "Operands: " & cpu.Operation & ": " & Hex(RS) & ", " & Hex(RT) & ", " & Hex(imm) 
-Print "-----------------------------------"
+'Print Hex(cpu.current_PC)
+'Print "Operands: " & cpu.Operation & ": " & Hex(RS) & ", " & Hex(RT) & ", " & Hex(imm) 
+'Print "-----------------------------------"
 
 cpu.current_PC += 4
 End Sub
@@ -77,19 +77,19 @@ EndIf
 
 
 
-#Ifdef debug
-Print "Memory Mirror: " & Hex(port.memMirror)
-Print "T1: " & Hex(cpu.GPR(9))
-Print Hex(cpu.memory(0)) & " " & Hex(cpu.memory(1)) & " " & Hex(cpu.memory(2)) & " " & Hex(cpu.memory(3))
-#EndIf
+'#Ifdef debug
+'Print "Memory Mirror: " & Hex(port.memMirror)
+'Print "T1: " & Hex(cpu.GPR(9))
+'Print Hex(cpu.memory(0)) & " " & Hex(cpu.memory(1)) & " " & Hex(cpu.memory(2)) & " " & Hex(cpu.memory(3))
+'#EndIf
 
 
 
 cpu.GPR(0) = 0
 instructions += 1
-cpu.storeAddress = 0 
+cpu.storeAddress = 1
 
 'If cpu.current_PC >= cpu.bPoint Then sleep 
-Print "Instructions Executed " &  instructions
+If instructions Mod 5 = 0 Then Print "Instructions Executed " &  instructions
 Loop While Not MultiKey(SC_ESCAPE)
 

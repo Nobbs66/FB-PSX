@@ -77,7 +77,8 @@ Declare Sub CPU_SWC2
 Declare Sub decode_instruction
 
 Sub CPU_ADD
-	cpu.GPR(RD) = cpu.GPR(RS) + cpu.GPR(RT)
+	cpu.GPR(RD) = CInt(cpu.GPR(RS)) + CInt(cpu.GPR(RT))
+	Print #99, Hex(cpu.GPR(RD)) & ":" & Hex(cpu.GPR(RS)) & ":" & Hex(cpu.GPR(RT))
 	checkOverflow
 End Sub
 Sub CPU_ADDI
@@ -237,13 +238,13 @@ Sub CPU_J
 	cpu.branch_queued = 2
 End Sub
 Sub CPU_JAL
-	cpu.GPR(31) = cpu.current_PC + 4
+	cpu.GPR(31) = cpu.current_PC + 8
 	cpu.delay_slot_PC = cpu.current_PC And &hF0000000
 	cpu.delay_slot_PC or= Target 
 	cpu.branch_queued = 2
 End Sub
 Sub CPU_JALR
-	cpu.GPR(RD) = cpu.current_PC + 4
+	cpu.GPR(RD) = cpu.current_PC + 8
 	cpu.current_PC = cpu.GPR(RS)
 End Sub
 Sub CPU_JR
@@ -295,7 +296,7 @@ Sub CPU_LW
 	Dim load As integer
 	For i As Integer = 0 To 3
 	load or= (ReadByte(addr+(3-i)) Shl (24-(i*8)))
-	Print Hex(load)
+	'Print Hex(load)
 	Next
 	cpu.GPR(RT) = load
 End Sub
@@ -325,7 +326,7 @@ End Sub
 Sub CPU_MFC0	
 Dim As UByte KUc = SR And &h2 'Check for Kernel Mode
 If  KUC = 2 Then 
-	Print "SR: " & SR
+	'Print "SR: " & SR
 	Dim As UByte temp = ((SR Shr 28) And 1) 
 	If temp <> 0 Then 
 		cpu.GPR(RT) = cop0.reg(RD)
@@ -349,20 +350,20 @@ Sub CPU_MFHI
 End Sub
 
 Sub CPU_MFLO
-	cpu.GPR(RD) = cpu.HI
+	cpu.GPR(RD) = cpu.LO
 End Sub
 Sub CPU_MTC0
 Dim As UByte KUc = SR And &h2 'Check for Kernel Mode
 If KUc = 2 Then 
-		Print "SR: " & SR
-		Print "COP0 Reg: " & RD
-		Print "CPU REG: " & RT
-		Print "MISC REG: " & RS
+		'Print "SR: " & SR
+		'Print "COP0 Reg: " & RD
+		'Print "CPU REG: " & RT
+		'Print "MISC REG: " & RS
 		Dim As UByte temp = ((SR Shr 28) And 1)
 		If temp <> 0 Then 
 			cop0.reg(RD) = cpu.GPR(RT)
-			Print "COP0 Reg: " & RD
-			Print "CPU REG: " & RT
+			'Print "COP0 Reg: " & RD
+			'Print "CPU REG: " & RT
 		Else 
 			Exception(0,11,0) 'COP0 Unusable 
 		EndIf
@@ -415,8 +416,8 @@ Sub CPU_SB
 	WriteByte(addr,value)
 	cpu.storeAddress = 1
 	cpu.storedAddress = addr
-	Print "Addr: " & Hex(addr)
-	Print "Value: " & Hex(value)
+	'Print "Addr: " & Hex(addr)
+	'Print "Value: " & Hex(value)
 	'cpu.breakPoint = 1
 	'Sleep
 End Sub
@@ -431,14 +432,15 @@ Sub CPU_SH
 	For i As Integer = 0 To 1
 		load = ((cpu.GPR(RT) Shr i*8) And &hFF)
 		WriteByte(addr+i,load)
-		Print "Addr: " & Hex(addr+i)
-		Print "Value: " & Hex(load)
+		'Print "Addr: " & Hex(addr+i)
+		'Print "Value: " & Hex(load)
 	Next
 	cpu.breakPoint = 1
 '	Sleep
 End Sub
 Sub CPU_SLL
 	cpu.GPR(RD) = cpu.GPR(RT) Shl SA
+	Print #99, Hex(cpu.GPR(RD)) & ":" & Hex(cpu.GPR(RT)) & ":" & Hex(SA)
 End Sub
 Sub CPU_SLLV
 	cpu.GPR(RD) = cpu.GPR(RT) Shl  cpu.GPR(RS)
@@ -490,8 +492,8 @@ Sub CPU_SW
 	For i As Integer = 0 To 3
 		load = ((cpu.GPR(RT) Shr i*8) And &hFF)
 		WriteByte(addr+i,load)
-		Print "Addr: " & Hex(addr+i)
-		Print "Value: " & Hex(load)
+		'Print "Addr: " & Hex(addr+i)
+		'Print "Value: " & Hex(load)
 		cpu.storeValue = load 
 		Print #99, "Address: " & Hex(addr) & " = " & Hex(load) 
 	Next
