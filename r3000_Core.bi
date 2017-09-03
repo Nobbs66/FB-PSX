@@ -2,6 +2,7 @@ Declare Sub checkOverflow
 Declare Sub loadBIOS
 Declare Sub validBIOS
 Declare Sub initCPU
+Declare Sub loadDelay
 Declare Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 Declare function ReadByte(ByVal addr As UInteger) As UInteger
 
@@ -12,6 +13,8 @@ Type cpus
 	dCache(&h400) As UByte
 	expansion(&h800000) As UByte
 	GPR(32) As UInteger
+	dGPR(32) As UInteger 'Load Delay GPR set
+	fGPR(32) As Ubyte 'Load Delay flags
 	current_PC As UInteger
 	delayReg As UByte
 	delayValue As UInteger
@@ -31,6 +34,8 @@ Type cpus
    storeValue As UInteger
 	ophistory(0 To &hFF) As String 
    const Reset_Vector As UInteger = &hBFC00000
+   bootStatus As UByte
+   instructions As Uinteger 
 End Type
 
 
@@ -50,7 +55,7 @@ Const As UInteger KUSEG = &h1FFFFF
 Const As UInteger KSEG0 = &h80000000
 Const As UInteger KSEG1 = &hA0000000
 Open "log.txt" For Output As #99
-
+Open "writes.txt" For Output As #88
 Dim Shared cpu As cpus
 Dim Shared cop0 As cop0s
 Dim Shared port As ports
@@ -78,12 +83,8 @@ Dim Shared port As ports
 #Define BEV (((cop0.reg(12) Shr 22) And 1)) 'Bootstrap Exception Vector 
 
 Sub loadBIOS
-Open "BIOS\SCPH1001.BIN" for binary as #1
-'Open "BIOS\SCPH1001.BIN" For Binary As #1
-'Open "BIOS\LDTEST.BIN" For Binary As #1
-for i as uinteger  = 0 to &h80000
-get #1, i, cpu.bios(i-1)
-Next
+If FileExists("BIOS\SCPH1001.BIN") Then Open "BIOS\SCPH1001.BIN" for binary as #1 Else Print "Please provide a valid BIOS ROM"
+get #1,, cpu.bios()
 close #1
 End Sub
 Sub initCPU
@@ -101,15 +102,19 @@ Sub fetchInstruction 'Copies 4 bytes to a 32-bit opcode variable
 			cpu.opcode Or= (cpu.memory(cpu.current_PC+i) Shl i*8)
 			Next
 	'''''''''''''''''''''''''''''''''''''''''''''''
-		Case &h80000000 To &h803FFFFF
-			Dim As UInteger addr = cpu.current_PC And &h1FFFFF
-			For i As Integer = 0 To &hF
-				Print Hex(cpu.memory(addr + i))
+		Case &h80000000 To &h801FFFFF
+			For i As Integer = 0 To 3
+			cpu.opcode Or= (cpu.memory((cpu.current_PC+i)And &h1FFFFF) Shl i*8)
 			Next
 	'''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &hA0000000 To &hA01FFFFF
 			For i As Integer = 0 To 3
 			cpu.opcode Or= (cpu.memory((cpu.current_PC+i)And &h1FFFFF) Shl i*8)
+			Next
+	'''''''''''''''''''''''''''''''''''''''''''''''''''''
+		case &h1FC00000 to &h1FC7FFFF
+			For i As Integer = 0 To 3
+				cpu.opcode Or= (cpu.bios((cpu.current_PC+i)And &h7FFFF) Shl i*8)
 			Next
 	'''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &hBFC00000 To &hBFC7FFFF
@@ -172,6 +177,7 @@ Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As uinteger
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &h80000000 To &h807FFFFF 'KSEG0
 		 	cpu.memory(addr And &h1FFFFF) = value
+		 	Print #88, "Writing KSEG 0"
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''		 	
 		Case &hA0000000 To &hA07FFFFF 'KSEG1
 			cpu.memory(addr And &h1FFFFF) = value
@@ -182,8 +188,14 @@ Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As uinteger
 		Case &h1F801000 To &h1F801FFC 'I/O Ports
 			Print #99, "Writing I/O Port at: " & Hex(addr)
 			writeIO(addr, value)
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &h1F000000 To &h1F7FFFFF 'Expansion Region
 			cpu.expansion(addr And &h7FFFFF) = value
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		Case &h1F802041
+			cpu.bootStatus = value
 		Case &hFFFE0130 To &hFFFE0133
 			Print #99, "Writing Cache Control " & Hex(addr)
 			writeIO(addr, value)
@@ -193,12 +205,12 @@ Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As uinteger
 			Print #99, "DATA: " & Hex(value)
 	End Select
 	Else
-	cpu.iCache(addr) = value 
+	cpu.iCache(addr And &Hfff) = value 
 	EndIf
 
 	return 0 
 End Function
-function ReadByte(ByVal addr As UInteger) As UInteger
+Function ReadByte(ByVal addr As UInteger) As UInteger
 		'Memory is split into a few different regions
 		dim value as ubyte 
 	Select Case addr
@@ -215,9 +227,25 @@ function ReadByte(ByVal addr As UInteger) As UInteger
 		Case &h1F801000 To &h1F801FFC 'I/O Ports
 			Print #99, "Reading I/O Port at: " & Hex(addr)
 			writeIO(addr, value)
+		Case &h1FC00000 To &h1FC7FFFF
+			value = cpu.bios(addr - &h1FC00000)
 		Case Else 
 			Print #99, "Bad Read Address at: " & Hex(addr)
 	End Select
 	return value
 End Function
-
+Sub loadDelay 'Fix this
+    For i As Integer = 1 To &h1F
+        Select Case cpu.fGPR(i)
+        Case 0
+            cpu.dGPR(i) = cpu.GPR(i)
+        Case 1
+            cpu.GPR(i) = cpu.dGPR(i)
+            cpu.fGPR(i) = 0
+        Case 2
+            'Do Nothing
+            cpu.fGPR(i) = 1
+        End select
+    	cpu.GPR(i) = cpu.dGPR(i)
+    Next
+End Sub

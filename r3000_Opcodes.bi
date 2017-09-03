@@ -74,6 +74,7 @@ Declare Sub CPU_MFC2 'MFCz
 Declare Sub CPU_MTC0 'MTCz
 Declare Sub CPU_MTC2 'MTCz
 Declare Sub CPU_SWC2
+Declare Sub RFE
 Declare Sub decode_instruction
 
 Sub CPU_ADD
@@ -105,76 +106,103 @@ Sub CPU_ANDI
 End Sub
 Sub CPU_BEQ
 	If cpu.GPR(RS) = cpu.GPR(RT) Then 
-		cpu.branch_queued = 2
-		Dim As Short temp = CShort(imm)
-		Dim As Integer bTarget = temp Shl 2
-		cpu.delay_slot_PC = cpu.current_PC + bTarget
-	EndIf
-End Sub
-Sub CPU_BGEZ
-	Dim As uinteger test = ((cpu.GPR(RS) And &h80000000)Shr 31)
-	If test = 0 Then 
-		cpu.branch_queued = 2
-		Dim As Short temp = CShort(imm)
-		Dim As Integer bTarget = temp Shl 2
-		cpu.delay_slot_PC = cpu.current_PC + bTarget
-	EndIf
-End Sub
-Sub CPU_BGEZAL
-	Dim As UInteger test = ((cpu.GPR(RS) And &h80000000)Shr 31)
-	If test = 0 Then 
-		cpu.branch_queued = 2
-		Dim As Short temp = CShort(imm)
-		Dim As Integer bTarget = temp Shl 2
-		cpu.delay_slot_PC = cpu.current_PC + bTarget
-	EndIf
-	cpu.GPR(31) = cpu.current_PC + 8
-End Sub
-Sub CPU_BGTZ
-	Dim As UByte test = ((cpu.GPR(RS) And &h80000000)Shr 31)
-	If test = 0 then
-		cpu.branch_queued = 2
-		Dim As Short temp = CShort(imm)
-		Dim As Integer bTarget = temp Shl 2
-		cpu.delay_slot_PC = cpu.current_PC + bTarget
-	EndIf
-End Sub
-Sub CPU_BLEZ
-	Dim As UByte test = ((cpu.GPR(RS) And &h80000000)Shr 31)
-	If test = 1 Then 
-		cpu.branch_queued = 2
-		Dim As Short temp = CShort(imm)
-		Dim As Integer bTarget = temp Shl 2
-		cpu.delay_slot_PC = cpu.current_PC + bTarget
-	EndIf
-End Sub
-Sub CPU_BLTZ
-	Dim As UByte test = ((cpu.GPR(RS) And &h80000000)Shr 31)
-	If ((test = 1) And (RS <> 0)) Then 
-		cpu.branch_queued = 2
-		Dim As Short temp = CShort(imm)
-		Dim As Integer bTarget = temp Shl 2
-		cpu.delay_slot_PC = cpu.current_PC + bTarget
-	EndIf
-End Sub
-Sub CPU_BLTZAl
-	Dim As UByte test = ((cpu.GPR(RS) And &h80000000)Shr 31)
-	If ((test = 0) And (RS <> 0)) Then 
-		cpu.branch_queued = 2
-		Dim As Short temp = CShort(imm)
-		Dim As Integer bTarget = temp Shl 2
-		cpu.delay_slot_PC = cpu.current_PC + bTarget
-	EndIf
-	cpu.GPR(31) = cpu.current_PC + 8
-End Sub
-Sub CPU_BNE
-	'Print "ADDR " & Hex(addr)
-	Print #99, Hex(cpu.GPR(RS)) & " " & Hex(cpu.GPR(RT))
-	If cpu.GPR(RS) <> cpu.GPR(RT) Then 
+		Print #99, "Branch = True"
 		cpu.branch_queued = 2
 		Dim As Short temp = CShort(imm)
 		Dim As Integer bTarget = temp Shl 2
 		cpu.delay_slot_PC = cpu.current_PC + bTarget + 4
+	Else
+		Print #99, "Branch = False"
+	EndIf
+		Print #99, "REGS " & RS & " " & RT
+		Print #99, Hex(cpu.GPR(RS)) & " " & Hex(cpu.GPR(RT))
+End Sub
+Sub CPU_BGEZ
+	Dim As uinteger test = ((cpu.GPR(RS) And &h80000000)Shr 31)
+	If test = 0 Then 
+		Print #99, "Branch = True"
+		cpu.branch_queued = 2
+		Dim As Short temp = CShort(imm)
+		Dim As Integer bTarget = temp Shl 2
+		cpu.delay_slot_PC = cpu.current_PC + bTarget + 4
+	Else
+		Print #99, "Branch = False"
+	EndIf
+End Sub
+Sub CPU_BGEZAL
+	Dim As UInteger test = CInt(cpu.GPR(RS))
+	If test >= 0 Then 
+		Print #99, "Branch = True"
+		cpu.branch_queued = 2
+		Dim As Short temp = CShort(imm)
+		Dim As Integer bTarget = temp Shl 2
+		cpu.delay_slot_PC = cpu.current_PC + bTarget + 4
+	Else
+		Print #99, "Branch = False"
+	EndIf
+	cpu.GPR(31) = cpu.current_PC + 8
+End Sub
+Sub CPU_BGTZ
+	Dim As UInteger test = CInt(cpu.GPR(RS))
+	Print #99,  "RS: " & RS & " = " & Hex(cpu.GPR(RS))
+	If test > 0 Then 
+		Print #99, "Branch = True"
+		cpu.branch_queued = 2
+		Dim As Short temp = CShort(imm)
+		Dim As Integer bTarget = temp Shl 2
+		cpu.delay_slot_PC = cpu.current_PC + bTarget + 4
+	
+	Else
+		Print #99, "Branch = False"
+	EndIf
+
+End Sub
+Sub CPU_BLEZ
+	Dim As UByte test = CInt(cpu.GPR(RS))
+	If test <= 0 Then 
+		Print #99, "Branch = True"
+		cpu.branch_queued = 2
+		Dim As Short temp = CShort(imm)
+		Dim As Integer bTarget = temp Shl 2
+		cpu.delay_slot_PC = cpu.current_PC + bTarget + 4
+	Else
+		Print #99, "Branch = False"
+	EndIf
+End Sub
+Sub CPU_BLTZ
+	Dim As UByte test = CInt(cpu.GPR(RS))
+	If test < 0 Then 
+		Print #99, "Branch = True"
+		cpu.branch_queued = 2
+		Dim As Short temp = CShort(imm)
+		Dim As Integer bTarget = temp Shl 2
+		cpu.delay_slot_PC = cpu.current_PC + bTarget + 4
+	Else
+		Print #99, "Branch = False"
+	EndIf
+End Sub
+Sub CPU_BLTZAl
+	Dim As UByte test = CInt(cpu.GPR(RS))
+	If test < 0 Then 
+		Print #99, "Branch = True"
+		cpu.branch_queued = 2
+		Dim As Short temp = CShort(imm)
+		Dim As Integer bTarget = temp Shl 2
+		cpu.delay_slot_PC = cpu.current_PC + bTarget + 4
+	Else
+		Print #99, "Branch = False"
+	EndIf
+	cpu.GPR(31) = cpu.current_PC + 8
+End Sub
+Sub CPU_BNE
+	If cpu.GPR(RS) <> cpu.GPR(RT) Then 
+		Print #99, "Branch = True"
+		cpu.branch_queued = 2
+		Dim As Short temp = CShort(imm)
+		Dim As Integer bTarget = temp Shl 2
+		cpu.delay_slot_PC = cpu.current_PC + bTarget + 4
+	Else
+		Print #99, "Branch = False"
 	EndIf
 End Sub
 Sub CPU_BREAK
@@ -244,8 +272,10 @@ Sub CPU_JAL
 	cpu.branch_queued = 2
 End Sub
 Sub CPU_JALR
+	dim as integer temp = cint(cpu.GPR(RS))
 	cpu.GPR(RD) = cpu.current_PC + 8
-	cpu.current_PC = cpu.GPR(RS)
+	cpu.delay_slot_PC = temp
+	cpu.branch_queued = 2
 End Sub
 Sub CPU_JR
 	Dim As Integer temp = CInt(cpu.GPR(RS))
@@ -253,52 +283,82 @@ Sub CPU_JR
 	cpu.branch_queued = 2
 End Sub
 Sub CPU_LB
-	Dim As UInteger temp = imm + cpu.GPR(RS)
-	Dim As Integer addr = CInt(temp) 
+	Dim As Integer addr = CShort(imm) + cpu.GPR(RS)
 	Dim As Integer value = ReadByte(addr)
-	cpu.GPR(RT) = value
+	cpu.GPR(RT) = CByte(value)
+	cpu.fGPR(RT) = 2
+	Print #88, "-----------------------------------------------"
+	Print #88, "ADDR: " & Hex(addr) & ":" & Hex(value)
+	Print #88, "LB:" & Hex(cpu.current_PC)
+	Print #88, "Cycles: " & cpu.instructions
+	Print #88, "-----------------------------------------------"
 End Sub
 Sub CPU_LBU
-	Dim As UInteger temp = imm + cpu.GPR(RS)
-	Dim As Integer addr = CInt(temp) 
+	Dim As Integer addr = CShort(imm) + cpu.GPR(RS)
 	cpu.GPR(RT) = ReadByte(addr)
+	cpu.delayFlag = 2
+	Print #88, "-----------------------------------------------"
+	Print #88, "LBU:" & Hex(cpu.current_PC)
+	Print #88, "Cycles: " & cpu.instructions
+	Print #88, "-----------------------------------------------"
 End Sub
 Sub CPU_LH
-	Dim As UInteger temp = imm + cpu.GPR(RS)
-	Dim As Integer addr = CInt(temp) 
+	Dim As Integer addr = CShort(imm) + cpu.GPR(RS)
 	Dim As Byte test = addr And 1
 	Dim load As integer
 	For i As uInteger = 0 To 1
 	load Or= (ReadByte(addr+i) Shl i*8)
 	Next
-	If test = 0 Then cpu.GPR(RT) = load
+	Print #88, "-----------------------------------------------"
+	Print #88, "ADDR: " & Hex(addr) & ":" & Hex(load)
+	Print #88, "LH:" & Hex(cpu.current_PC)
+	Print #88, "Cycles: " & cpu.instructions
+	Print #88, "-----------------------------------------------"
+	cpu.GPR(RT) = CShort(load)
+	cpu.fGPR(RT) = 2
 End Sub
 Sub CPU_LHU
-	Dim As UInteger temp = imm + cpu.GPR(RS)
-	Dim As Integer addr = CInt(temp) 
+	Dim As Integer addr = CShort(imm) + cpu.GPR(RS)
 	Dim As Byte test = addr And 1
 	Dim load As uinteger
 	For i As uInteger = 0 To 1
 	load Or= (cpu.memory(addr+i) Shl i*8)
 	Next
-	If test = 0 Then cpu.GPR(RT) = load
+	Print #88, "-----------------------------------------------"
+	Print #88, "ADDR: " & Hex(addr) & ":" & Hex(load)
+	Print #88, "LHU:" & Hex(cpu.current_PC)
+	Print #88, "Cycles: " & cpu.instructions
+	Print #88, "-----------------------------------------------"
+	cpu.GPR(RT) = load
+	cpu.fGPR(RT) = 2
 End Sub
 Sub CPU_LUI 
-	cpu.GPR(RT) And= &hFFFF
 	cpu.GPR(RT) = (imm Shl 16)
+	cpu.fGPR(RT) = 2
+	Print #99, Hex(imm Shl 16)
 	Print #99, Hex(cpu.GPR(RT))
+	Print #88, "-----------------------------------------------"
+	Print #88, "LUI: " & Hex(cpu.current_PC)
+	Print #88, "Cycles: " & cpu.instructions &  " : " & Hex(imm)
+	Print #88, "-----------------------------------------------"
 End Sub
 Sub CPU_LW
-	Dim As UInteger temp = imm + cpu.GPR(RS)
-	Dim As Integer addr = CInt(temp)  
+	Dim As Integer addr = CShort(imm) + cpu.GPR(RS)
 	Dim As Byte test = addr And 1
 	cpu.GPR(RT) = 0 
 	Dim load As integer
 	For i As Integer = 0 To 3
 	load or= (ReadByte(addr+(3-i)) Shl (24-(i*8)))
-	'Print Hex(load)
+
 	Next
+	Print #88, "-----------------------------------------------"
+	Print #88, "ADDR: " & Hex(addr) & ":" & Hex(load)
+	Print #88, "LW:" & Hex(cpu.current_PC)
+	Print #88, cpu.instructions
+	Print #88, "-----------------------------------------------"
 	cpu.GPR(RT) = load
+	cpu.fGPR(RT) = 2
+	
 End Sub
 Sub CPU_LWC2
 	Dim As UByte temp = ((SR Shr 30) And 1) 
@@ -407,35 +467,35 @@ Sub CPU_OR
 	cpu.GPR(RD) = cpu.GPR(RS) Or cpu.GPR(RT)
 End Sub
 Sub CPU_ORI
-	cpu.GPR(RT)= cpu.GPR(RS) Or imm
+	cpu.GPR(RT)= cpu.GPR(RS) + imm
+End Sub
+Sub CPU_RFE
+	
 End Sub
 Sub CPU_SB
-	Dim As UInteger temp = imm + cpu.GPR(RS)
-	Dim As Integer addr = CInt(temp) 
+	Dim As Integer addr = CShort(imm) + cpu.GPR(RS)
 	Dim As Integer value = cpu.GPR(RT) And &hFF
 	WriteByte(addr,value)
-	cpu.storeAddress = 1
-	cpu.storedAddress = addr
-	'Print "Addr: " & Hex(addr)
-	'Print "Value: " & Hex(value)
-	'cpu.breakPoint = 1
-	'Sleep
+	Print #88, "addr: " & Hex(addr) & ":" & "value: " & Hex(value)
+	Print #88, "SB" & Hex(cpu.current_PC)
+	Print #88, "Cycles: " & cpu.instructions
 End Sub
 
 Sub CPU_SH
 	'I'm not confident with this one
-	Dim As UInteger temp = imm + cpu.GPR(RS)
-	Dim As Integer addr = CInt(temp) 
+	Dim As Integer addr = CShort(imm) + cpu.GPR(RS)
 	Dim load As Byte
-	cpu.storeAddress = 1
-	cpu.storedAddress = addr
 	For i As Integer = 0 To 1
 		load = ((cpu.GPR(RT) Shr i*8) And &hFF)
 		WriteByte(addr+i,load)
-		'Print "Addr: " & Hex(addr+i)
-		'Print "Value: " & Hex(load)
+		Print #88, "ADDR: " & Hex(addr + i) & ":" & Hex(load)
+		
 	Next
 	cpu.breakPoint = 1
+	Print #88, "-----------------------------------------------"
+	Print #88, "SH" & Hex(cpu.current_PC)
+	Print #88, "Cycles: " & cpu.instructions
+	Print #88, "-----------------------------------------------"
 '	Sleep
 End Sub
 Sub CPU_SLL
@@ -443,20 +503,20 @@ Sub CPU_SLL
 	Print #99, Hex(cpu.GPR(RD)) & ":" & Hex(cpu.GPR(RT)) & ":" & Hex(SA)
 End Sub
 Sub CPU_SLLV
-	cpu.GPR(RD) = cpu.GPR(RT) Shl  cpu.GPR(RS)
+	cpu.GPR(RD) = cpu.GPR(RT) Shl  (cpu.GPR(RS) And &h1F)
 End Sub
 Sub CPU_SLT
-	Dim As Integer tRT = cpu.GPR(RT)
-	Dim As Integer tRS = cpu.GPR(RS)
+	Dim As Integer tRS = CInt(cpu.GPR(RS))
+	Dim As Integer tRT = CInt(cpu.GPR(RT))
 	If tRS < tRT Then cpu.GPR(RD) = 1 Else cpu.GPR(RD) = 0
 End Sub
 Sub CPU_SLTI
-	Dim As Integer tImm = imm
-	Dim As Integer tRS = cpu.GPR(RS)
+	Dim As Integer tImm = CShort(imm)
+	Dim As Integer tRS = CInt(cpu.GPR(RS))
 	If tRS < tImm Then cpu.GPR(RT) = 1 Else cpu.GPR(RT) = 0
 End Sub
 Sub CPU_SLTIU 'Might be correct without sign extension?
-	If cpu.GPR(RS) < imm Then cpu.GPR(RT) = 1 Else cpu.GPR(RT) = 0
+	If cpu.GPR(RS) < CShort(imm) Then cpu.GPR(RT) = 1 Else cpu.GPR(RT) = 0
 End Sub
 Sub CPU_SLTU
 	Print #99, Hex(cpu.GPR(RS)) & ":" & Hex(cpu.GPR(RT))
@@ -495,8 +555,14 @@ Sub CPU_SW
 		'Print "Addr: " & Hex(addr+i)
 		'Print "Value: " & Hex(load)
 		cpu.storeValue = load 
-		Print #99, "Address: " & Hex(addr) & " = " & Hex(load) 
+	
+		Print #88, "Address: " & Hex(addr) & " = " & Hex(load)
 	Next
+	Print #88, "-----------------------------------------------"
+	Print #88, "RT   " & RT & ": " & Hex(cpu.GPR(RT))
+	Print #88, "SW   " & Hex(cpu.current_PC)
+	Print #88, "Cycles: " & cpu.instructions
+	Print #88, "-----------------------------------------------"
 End Sub
 
 Sub CPU_SWC2
@@ -542,11 +608,26 @@ Sub decodeInstruction
 		Case &h244 'MTC2
 			cpu.Operation = "MTC2"
 			CPU_MTC2
+		Case &h200 'MFC0
+			cpu.Operation = "MFC0"
+			CPU_MFC0
+		Case &h240 'MFC2
+			cpu.Operation = "MFC2"
+			CPU_MFC2
+		Case Else
 	End Select
 	Select Case (cpu.opcode Shr 25)
 		Case &h21
-			cpu.Operation = "COP0"
-			CPU_COP0
+			Dim As UByte temp = cpu.opcode And &h2F
+			If temp = &h10 Then 
+				cpu.Operation = "RFE" 
+				CPU_RFE 
+			Else 
+				cpu.Operation = "COP0"
+				CPU_COP0
+			EndIf 
+
+		
 		Case &h25
 			cpu.Operation = "COP2"
 			CPU_COP2
@@ -738,9 +819,8 @@ Sub decodeInstruction
 		Case &h3A
 			cpu.operation = "SWC2"
 			CPU_SWC2
+		
 	End Select
-	'Else cpu.operation = "NOP" 
-	'endif
 End Sub
 
 
