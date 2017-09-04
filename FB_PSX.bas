@@ -84,13 +84,18 @@ cpu.GPR(0) = 0 'Keep Zero Register clean.
 
 
 Print #99, "T6: " & Hex(cpu.GPR(14))
-
+If cpu.instructions = 2704316 Then 
+	cls
+	Print "Press H for hard crash"
+	Do 
+	Sleep 5
+	Loop While Not MultiKey(SC_H)
+EndIf
 cpu.instructions += 1
 
 
 
-
 If cpu.instructions >= 60000000 Then CAE
-If cpu.instructions Mod 5 = 0 Then Print "Instructions Executed " &  cpu.instructions
+If cpu.instructions Mod &hFFFF = 0 Then Print "Instructions Executed " &  cpu.instructions
 Loop While Not MultiKey(SC_ESCAPE)
 

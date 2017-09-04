@@ -22,9 +22,8 @@ Function Exception(ByVal syscall As UInteger, ByVal eType As UByte, ByVal addr A
 	EndIf    
 	
 	EPC = cpu.current_PC
-	CAUSE = eType
-	cpu.current_PC = handler - 4
-	'Print "SR: " & BEV
+	CAUSE = (eType Shl 2)
+ 	cpu.current_PC = handler - 4
 	Return 0 
 End Function
 Sub checkInterrupt

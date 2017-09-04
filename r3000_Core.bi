@@ -6,7 +6,6 @@ Declare Sub loadDelay
 Declare Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 Declare function ReadByte(ByVal addr As UInteger) As UInteger
 
-
 Type cpus
 	memory(&h200000) As UByte
 	iCache(&hFFF) As ubyte
@@ -81,6 +80,8 @@ Dim Shared port As ports
 
 
 #Define BEV (((cop0.reg(12) Shr 22) And 1)) 'Bootstrap Exception Vector 
+
+#Define debug 'Debug logging
 
 Sub loadBIOS
 If FileExists("BIOS\SCPH1001.BIN") Then Open "BIOS\SCPH1001.BIN" for binary as #1 Else Print "Please provide a valid BIOS ROM"

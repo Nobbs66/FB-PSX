@@ -78,22 +78,16 @@ Declare Sub RFE
 Declare Sub decode_instruction
 
 Sub CPU_ADD
-	cpu.GPR(RD) = CInt(cpu.GPR(RS)) + CInt(cpu.GPR(RT))
-	Print #99, Hex(cpu.GPR(RD)) & ":" & Hex(cpu.GPR(RS)) & ":" & Hex(cpu.GPR(RT))
+	cpu.GPR(RD) = (cpu.GPR(RS)) + (cpu.GPR(RT))
 	checkOverflow
 End Sub
 Sub CPU_ADDI
-	'Dim As Integer value = imm
 	Dim As Integer temp = CShort(imm)
 	cpu.GPR(RT) = cpu.GPR(RS) + temp
-	Print #99, Hex(cpu.GPR(RT))
-	checkOverflow
 End Sub
 Sub CPU_ADDIU
 	Dim As Integer temp = Cshort(imm)
-	Print #99, Hex(temp)
 	cpu.GPR(RT) = temp + cpu.GPR(RS)
-	Print #99, Hex(cpu.GPR(RT))
 End Sub
 Sub CPU_ADDU
 	cpu.GPR(RD) = cpu.GPR(RS) + cpu.GPR(RT)
@@ -115,7 +109,6 @@ Sub CPU_BEQ
 		Print #99, "Branch = False"
 	EndIf
 		Print #99, "REGS " & RS & " " & RT
-		Print #99, Hex(cpu.GPR(RS)) & " " & Hex(cpu.GPR(RT))
 End Sub
 Sub CPU_BGEZ
 	Dim As uinteger test = ((cpu.GPR(RS) And &h80000000)Shr 31)
@@ -287,20 +280,24 @@ Sub CPU_LB
 	Dim As Integer value = ReadByte(addr)
 	cpu.GPR(RT) = CByte(value)
 	cpu.fGPR(RT) = 2
+	#Ifdef debug
 	Print #88, "-----------------------------------------------"
 	Print #88, "ADDR: " & Hex(addr) & ":" & Hex(value)
 	Print #88, "LB:" & Hex(cpu.current_PC)
 	Print #88, "Cycles: " & cpu.instructions
 	Print #88, "-----------------------------------------------"
+	#EndIf
 End Sub
 Sub CPU_LBU
 	Dim As Integer addr = CShort(imm) + cpu.GPR(RS)
 	cpu.GPR(RT) = ReadByte(addr)
 	cpu.delayFlag = 2
+	#Ifdef debug
 	Print #88, "-----------------------------------------------"
 	Print #88, "LBU:" & Hex(cpu.current_PC)
 	Print #88, "Cycles: " & cpu.instructions
 	Print #88, "-----------------------------------------------"
+	#EndIf
 End Sub
 Sub CPU_LH
 	Dim As Integer addr = CShort(imm) + cpu.GPR(RS)
@@ -309,11 +306,13 @@ Sub CPU_LH
 	For i As uInteger = 0 To 1
 	load Or= (ReadByte(addr+i) Shl i*8)
 	Next
+	#Ifdef debug
 	Print #88, "-----------------------------------------------"
 	Print #88, "ADDR: " & Hex(addr) & ":" & Hex(load)
 	Print #88, "LH:" & Hex(cpu.current_PC)
 	Print #88, "Cycles: " & cpu.instructions
 	Print #88, "-----------------------------------------------"
+	#EndIf
 	cpu.GPR(RT) = CShort(load)
 	cpu.fGPR(RT) = 2
 End Sub
@@ -324,23 +323,27 @@ Sub CPU_LHU
 	For i As uInteger = 0 To 1
 	load Or= (cpu.memory(addr+i) Shl i*8)
 	Next
+	#Ifdef debug
 	Print #88, "-----------------------------------------------"
 	Print #88, "ADDR: " & Hex(addr) & ":" & Hex(load)
 	Print #88, "LHU:" & Hex(cpu.current_PC)
 	Print #88, "Cycles: " & cpu.instructions
 	Print #88, "-----------------------------------------------"
+	#EndIf
 	cpu.GPR(RT) = load
 	cpu.fGPR(RT) = 2
 End Sub
 Sub CPU_LUI 
 	cpu.GPR(RT) = (imm Shl 16)
 	cpu.fGPR(RT) = 2
+	#Ifdef debug
+	Print #88, "-----------------------------------------------"
 	Print #99, Hex(imm Shl 16)
 	Print #99, Hex(cpu.GPR(RT))
-	Print #88, "-----------------------------------------------"
 	Print #88, "LUI: " & Hex(cpu.current_PC)
 	Print #88, "Cycles: " & cpu.instructions &  " : " & Hex(imm)
 	Print #88, "-----------------------------------------------"
+	#EndIf
 End Sub
 Sub CPU_LW
 	Dim As Integer addr = CShort(imm) + cpu.GPR(RS)
@@ -349,13 +352,14 @@ Sub CPU_LW
 	Dim load As integer
 	For i As Integer = 0 To 3
 	load or= (ReadByte(addr+(3-i)) Shl (24-(i*8)))
-
 	Next
+	#Ifdef debug
 	Print #88, "-----------------------------------------------"
 	Print #88, "ADDR: " & Hex(addr) & ":" & Hex(load)
 	Print #88, "LW:" & Hex(cpu.current_PC)
 	Print #88, cpu.instructions
 	Print #88, "-----------------------------------------------"
+	#EndIf
 	cpu.GPR(RT) = load
 	cpu.fGPR(RT) = 2
 	
@@ -378,15 +382,18 @@ Sub CPU_LWC2
 End Sub
 
 Sub CPU_LWL
-	
+	#Ifdef debug
+	Print #99, "Unimplemented Op: LWL" 
+	#EndIf
 End Sub
 Sub CPU_LWR
-	
+	#Ifdef debug
+	Print #99, "Unimplemented Op: LWR"
+	#EndIf
 End Sub
 Sub CPU_MFC0	
 Dim As UByte KUc = SR And &h2 'Check for Kernel Mode
 If  KUC = 2 Then 
-	'Print "SR: " & SR
 	Dim As UByte temp = ((SR Shr 28) And 1) 
 	If temp <> 0 Then 
 		cpu.GPR(RT) = cop0.reg(RD)
@@ -415,15 +422,8 @@ End Sub
 Sub CPU_MTC0
 Dim As UByte KUc = SR And &h2 'Check for Kernel Mode
 If KUc = 2 Then 
-		'Print "SR: " & SR
-		'Print "COP0 Reg: " & RD
-		'Print "CPU REG: " & RT
-		'Print "MISC REG: " & RS
 		Dim As UByte temp = ((SR Shr 28) And 1)
 		If temp <> 0 Then 
-			cop0.reg(RD) = cpu.GPR(RT)
-			'Print "COP0 Reg: " & RD
-			'Print "CPU REG: " & RT
 		Else 
 			Exception(0,11,0) 'COP0 Unusable 
 		EndIf
@@ -470,15 +470,18 @@ Sub CPU_ORI
 	cpu.GPR(RT)= cpu.GPR(RS) + imm
 End Sub
 Sub CPU_RFE
-	
+	SR And= &hFFFFFFC0
+	SR Or= ((SR And &h3C) Shr 2)
 End Sub
 Sub CPU_SB
 	Dim As Integer addr = CShort(imm) + cpu.GPR(RS)
 	Dim As Integer value = cpu.GPR(RT) And &hFF
 	WriteByte(addr,value)
+	#Ifdef debug6
 	Print #88, "addr: " & Hex(addr) & ":" & "value: " & Hex(value)
 	Print #88, "SB" & Hex(cpu.current_PC)
 	Print #88, "Cycles: " & cpu.instructions
+	#endif
 End Sub
 
 Sub CPU_SH
@@ -491,16 +494,18 @@ Sub CPU_SH
 		Print #88, "ADDR: " & Hex(addr + i) & ":" & Hex(load)
 		
 	Next
-	cpu.breakPoint = 1
+	#Ifdef debug
 	Print #88, "-----------------------------------------------"
 	Print #88, "SH" & Hex(cpu.current_PC)
 	Print #88, "Cycles: " & cpu.instructions
 	Print #88, "-----------------------------------------------"
-'	Sleep
+	#EndIf
 End Sub
 Sub CPU_SLL
 	cpu.GPR(RD) = cpu.GPR(RT) Shl SA
+	#Ifdef debug
 	Print #99, Hex(cpu.GPR(RD)) & ":" & Hex(cpu.GPR(RT)) & ":" & Hex(SA)
+	#EndIf
 End Sub
 Sub CPU_SLLV
 	cpu.GPR(RD) = cpu.GPR(RT) Shl  (cpu.GPR(RS) And &h1F)
@@ -552,35 +557,34 @@ Sub CPU_SW
 	For i As Integer = 0 To 3
 		load = ((cpu.GPR(RT) Shr i*8) And &hFF)
 		WriteByte(addr+i,load)
-		'Print "Addr: " & Hex(addr+i)
-		'Print "Value: " & Hex(load)
 		cpu.storeValue = load 
-	
-		Print #88, "Address: " & Hex(addr) & " = " & Hex(load)
 	Next
+	#Ifdef debug
 	Print #88, "-----------------------------------------------"
+	Print #88, "Address: " & Hex(addr) & " = " & Hex(load)
 	Print #88, "RT   " & RT & ": " & Hex(cpu.GPR(RT))
 	Print #88, "SW   " & Hex(cpu.current_PC)
 	Print #88, "Cycles: " & cpu.instructions
 	Print #88, "-----------------------------------------------"
+	#EndIf
 End Sub
 
 Sub CPU_SWC2
-	Print "Unimplemented Op"
-	Beep
-	Sleep
+	#Ifdef debug
+	Print #99, "Unimplemented Op"
+	#EndIf
 End Sub
 
 Sub CPU_SWL
-	Print "Unimplemented Op"
-	Beep
-	sleep
+	#Ifdef debug
+	Print #99, "Unimplemented Op"
+	#EndIf
 End Sub
 
 Sub CPU_SWR
-	Print "Unimplemented Op"
-	Beep
-	Sleep
+	#Ifdef debug
+	Print #99, "Unimplemented Op"
+	#EndIf
 End Sub
 Sub CPU_SYSCALL
 	Dim As UInteger code = ((cpu.opcode Shr 6) And &hFFFFF)
