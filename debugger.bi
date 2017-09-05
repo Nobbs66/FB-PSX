@@ -26,7 +26,6 @@ Sub menu
 	Case "Mem Dump"
 		dumpMemory
 	End Select
-	
 End Sub
 Sub breakPoint
 	Dim As UInteger break

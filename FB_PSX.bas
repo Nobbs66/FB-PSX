@@ -1,4 +1,3 @@
-
 #Include Once "fbgfx.bi"
 Using fb
 #Include Once "file.bi"
@@ -6,24 +5,21 @@ Using fb
 #Include Once "r3000_cop0.bi"
 #Include Once "gte.bi"
 #Include Once "r3000_opcodes.bi"
-
 Declare Sub CAE
-declare sub writeLog
+Declare sub writeLog
 Declare Sub dumpMemory
 #Include Once "debugger.bi"
 Declare Sub runCPU
-
-#Define debug
-
+'#Define debug
 Sub writeLog
+Print #99, "-----------------------------------"
 print #99, "Program Counter: " & hex(cpu.current_PC-4)
 Print #99, "Opcode: " & Hex(cpu.opcode) & " = " & cpu.Operation 
-If cpu.storeAddress = 1 Then Print #99, Hex(cpu.storedAddress)
 Print #99, "A2: " & Hex(cpu.GPR(6)) 
 Print #99, cpu.instructions
 Print #99, "Boot Status: " & cpu.bootStatus
 Print #99, "-----------------------------------"
-end Sub
+End Sub
 Sub dumpMemory
 	Open "mem.txt" For Output As #77
 	For i As Integer = 0 To &h1FFFFC Step 4
@@ -41,9 +37,9 @@ Sub dumpRegisters
 	For i As Integer = 1 To &h1F
 		Print #55, i & " " & Hex(cpu.GPR(i))
 	Next
+	Print #55, "PC: " & Hex(cpu.current_PC)
 End Sub
 Sub runCPU
-'loadDelay
 'Suspect Branch delay implementation
 If cpu.branch_queued = 1 Then
 	cpu.current_PC = cpu.delay_slot_PC
@@ -53,6 +49,13 @@ Else
 EndIf
 fetchInstruction
 decodeInstruction	
+If cpu.current_PC = &h800563F4 Then 
+	Cls
+	Print "THe magic NOR has been found!"
+	Sleep 1000
+	Print "CAE"
+	CAE
+EndIf
 cpu.current_PC += 4
 End Sub
 Sub CAE 'Cleanup and Exit
@@ -75,27 +78,22 @@ Do
 	Sleep 10
 Loop While Not MultiKey(SC_S)
 Cls
-
 'Main loop
 Do 
 runCPU
+#Ifdef debug
 writeLog
+#EndIf
+
+
+
 cpu.GPR(0) = 0 'Keep Zero Register clean. 
-
-
-Print #99, "T6: " & Hex(cpu.GPR(14))
-If cpu.instructions = 2704316 Then 
-	cls
-	Print "Press H for hard crash"
-	Do 
-	Sleep 5
-	Loop While Not MultiKey(SC_H)
-EndIf
 cpu.instructions += 1
 
+If cpu.instructions = 12000000 Then
+	CAE
+EndIf
 
-
-If cpu.instructions >= 60000000 Then CAE
 If cpu.instructions Mod &hFFFF = 0 Then Print "Instructions Executed " &  cpu.instructions
 Loop While Not MultiKey(SC_ESCAPE)
 

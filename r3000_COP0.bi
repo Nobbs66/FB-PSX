@@ -1,16 +1,9 @@
 'The PSX lacks a TLB and just mirrors addresses
 
 
-''''''''''''''''''''''NOTES''''''''''''''''''''''
-'
-
- 
-
 Const As UInteger eGeneral = &h80000080 'General Exception
 Const As UInteger eBreak	= &h80000040 'COP0 Break Exception
 Const As UInteger eReset	= &hBFC00000 'Reset Exception 
-
-
 Declare Function Exception(ByVal syscall As UInteger, ByVal eType As UByte, ByVal addr As UInteger) As UInteger
 Declare Sub checkInterrupt
 Function Exception(ByVal syscall As UInteger, ByVal eType As UByte, ByVal addr As UInteger) As UInteger
@@ -20,7 +13,6 @@ Function Exception(ByVal syscall As UInteger, ByVal eType As UByte, ByVal addr A
 	Else
 		handler = &hBFC00180
 	EndIf    
-	
 	EPC = cpu.current_PC
 	CAUSE = (eType Shl 2)
  	cpu.current_PC = handler - 4

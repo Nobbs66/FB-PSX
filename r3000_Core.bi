@@ -149,8 +149,11 @@ Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 		Case &h1074 To &h1077 'Interrupt Mask
 			
 		Case &h1080 To &h10F4 'DMA Registers
+			
 		Case &h1100 To &h1120 'Timers
 		Case &h1800 To &h1804 'CD ROM
+		Case &h1810 To &h1814 'GPU
+			
 		Case &h1820 To &h1828 'MDEC
 		Case &hC000 To &h1FFF 'SPU
 	End Select
@@ -193,22 +196,21 @@ Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As uinteger
 		Case &h1F000000 To &h1F7FFFFF 'Expansion Region
 			cpu.expansion(addr And &h7FFFFF) = value
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-		
-''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &h1F802041
 			cpu.bootStatus = value
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &hFFFE0130 To &hFFFE0133
 			Print #99, "Writing Cache Control " & Hex(addr)
 			writeIO(addr, value)
+			
 		Case Else 
 			Print #99, "Bad write"
 			Print #99, "ADDRESS: " & Hex(addr)
 			Print #99, "DATA: " & Hex(value)
 	End Select
 	Else
-	cpu.iCache(addr And &Hfff) = value 
+	'cpu.iCache(addr And &Hfff) = value 
 	EndIf
-
 	return 0 
 End Function
 Function ReadByte(ByVal addr As UInteger) As UInteger

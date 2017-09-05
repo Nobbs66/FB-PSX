@@ -319,9 +319,9 @@ End Sub
 Sub CPU_LHU
 	Dim As Integer addr = CShort(imm) + cpu.GPR(RS)
 	Dim As Byte test = addr And 1
-	Dim load As uinteger
+	Dim load As integer
 	For i As uInteger = 0 To 1
-	load Or= (cpu.memory(addr+i) Shl i*8)
+	load Or= (ReadByte(addr+i) Shl i*8)
 	Next
 	#Ifdef debug
 	Print #88, "-----------------------------------------------"
@@ -629,9 +629,7 @@ Sub decodeInstruction
 			Else 
 				cpu.Operation = "COP0"
 				CPU_COP0
-			EndIf 
-
-		
+			EndIf
 		Case &h25
 			cpu.Operation = "COP2"
 			CPU_COP2
