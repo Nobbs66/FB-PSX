@@ -53,11 +53,12 @@ End Type
 Const As UInteger KUSEG = &h1FFFFF
 Const As UInteger KSEG0 = &h80000000
 Const As UInteger KSEG1 = &hA0000000
-Open "log.txt" For Output As #99
+Open "logs/log0.txt" For Output As #99
 Open "writes.txt" For Output As #88
 Dim Shared cpu As cpus
 Dim Shared cop0 As cop0s
 Dim Shared port As ports
+Dim Shared As UInteger logWrites = 0, logfile = 0, splitLog = 10000000
 #Define RD  	((cpu.opcode Shr 11) And &h1F)
 #Define RT  	((cpu.opcode Shr 16) And &h1F)
 #Define RS  	((cpu.opcode Shr 21) And &h1F)
@@ -92,6 +93,7 @@ Sub initCPU
 	'cpu.current_PC = &hBFC00000
 	cpu.current_PC = cpu.Reset_Vector
 	cop0.reg(12) Or= &h400000 'Set BEV
+	gpu.GPUSTAT = &h10000000 'Set bit 28
 End Sub
 
 Sub fetchInstruction 'Copies 4 bytes to a 32-bit opcode variable
@@ -152,8 +154,10 @@ Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 			
 		Case &h1100 To &h1120 'Timers
 		Case &h1800 To &h1804 'CD ROM
-		Case &h1810 To &h1814 'GPU
-			
+		Case &h1810	'GP0
+			gpuCommand(&h1810)
+		Case &h1814	'GP1
+			gpuCommand(&h1814)
 		Case &h1820 To &h1828 'MDEC
 		Case &hC000 To &h1FFF 'SPU
 	End Select
@@ -213,6 +217,17 @@ Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As uinteger
 	EndIf
 	return 0 
 End Function
+Function ReadIO(ByVal addr As UInteger) As ubyte
+	Dim value As UByte
+	Select Case addr
+		Case &h1f801814 To &h1f801817
+			Dim As UByte shift = addr And 3
+			value = (gpu.GPUSTAT Shr (24-(shift*8)))
+			Print "Reading GPUSTAT!" 
+	End Select
+	
+	Return value
+End Function
 Function ReadByte(ByVal addr As UInteger) As UInteger
 		'Memory is split into a few different regions
 		dim value as ubyte 
@@ -229,7 +244,7 @@ Function ReadByte(ByVal addr As UInteger) As UInteger
 			value = cpu.expansion(addr And &h7FFFFF)
 		Case &h1F801000 To &h1F801FFC 'I/O Ports
 			Print #99, "Reading I/O Port at: " & Hex(addr)
-			writeIO(addr, value)
+			ReadIO(addr)
 		Case &h1FC00000 To &h1FC7FFFF
 			value = cpu.bios(addr - &h1FC00000)
 		Case Else 

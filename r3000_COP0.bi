@@ -13,7 +13,12 @@ Function Exception(ByVal syscall As UInteger, ByVal eType As UByte, ByVal addr A
 	Else
 		handler = &hBFC00180
 	EndIf    
-	EPC = cpu.current_PC
+	If cpu.branch_queued <> 0 Then 
+		EPC = cpu.current_PC - 4
+		Print #99, "Exception in Delay Slot"
+	Else 
+		EPC = cpu.current_PC
+	EndIf
 	CAUSE = (eType Shl 2)
  	cpu.current_PC = handler - 4
 	Return 0 

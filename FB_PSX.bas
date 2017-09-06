@@ -1,6 +1,7 @@
 #Include Once "fbgfx.bi"
 Using fb
 #Include Once "file.bi"
+#Include Once "gpu.bi"
 #Include Once "r3000_Core.bi"
 #Include Once "r3000_cop0.bi"
 #Include Once "gte.bi"
@@ -17,8 +18,16 @@ print #99, "Program Counter: " & hex(cpu.current_PC-4)
 Print #99, "Opcode: " & Hex(cpu.opcode) & " = " & cpu.Operation 
 Print #99, "A2: " & Hex(cpu.GPR(6)) 
 Print #99, cpu.instructions
+Print #99, Hex(SR)
 Print #99, "Boot Status: " & cpu.bootStatus
 Print #99, "-----------------------------------"
+logWrites+=1
+If logWrites >= splitlog Then
+	logfile+=1
+	logWrites = 0
+	Close #99
+	Open "logs/log" + Str(logFile) + ".txt" For Output As #99
+EndIf
 End Sub
 Sub dumpMemory
 	Open "mem.txt" For Output As #77
@@ -47,15 +56,11 @@ If cpu.branch_queued = 1 Then
 Else 
 	If cpu.branch_queued = 2 Then cpu.branch_queued -=1 
 EndIf
+
 fetchInstruction
 decodeInstruction	
-If cpu.current_PC = &h800563F4 Then 
-	Cls
-	Print "THe magic NOR has been found!"
-	Sleep 1000
-	Print "CAE"
-	CAE
-EndIf
+
+
 cpu.current_PC += 4
 End Sub
 Sub CAE 'Cleanup and Exit
@@ -63,6 +68,7 @@ Sub CAE 'Cleanup and Exit
 	dumpMemory
 	CLS
 	Print "Closing " 
+	close
 	Sleep 1000
 	end
 End Sub
@@ -90,9 +96,6 @@ writeLog
 cpu.GPR(0) = 0 'Keep Zero Register clean. 
 cpu.instructions += 1
 
-If cpu.instructions = 12000000 Then
-	CAE
-EndIf
 
 If cpu.instructions Mod &hFFFF = 0 Then Print "Instructions Executed " &  cpu.instructions
 Loop While Not MultiKey(SC_ESCAPE)
