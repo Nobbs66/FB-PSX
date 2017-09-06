@@ -1,4 +1,5 @@
 'ALU Operations
+Declare Sub RFE
 Declare Sub CPU_ADD
 Declare Sub CPU_ADDI
 Declare Sub CPU_ADDIU
@@ -74,9 +75,13 @@ Declare Sub CPU_MFC2 'MFCz
 Declare Sub CPU_MTC0 'MTCz
 Declare Sub CPU_MTC2 'MTCz
 Declare Sub CPU_SWC2
-Declare Sub RFE
 Declare Sub decode_instruction
 
+Sub CPU_RFE
+	Dim As uInteger temp = SR And &hFFFFFFC0
+	temp Or= ((SR And &h3C) Shr 2)
+	SR = temp
+End Sub
 Sub CPU_ADD
 	cpu.GPR(RD) = (cpu.GPR(RS)) + (cpu.GPR(RT))
 	checkOverflow
@@ -216,6 +221,7 @@ If KUc = 2 Then
 	Dim As UByte temp = ((SR Shr 28) And 1)
 	If temp <> 0 Then 
 		'Execute Coprocessor Function
+		
 	Else 
 		Exception(0,11,0) 'COP0 Unusable 
 	EndIf
@@ -469,10 +475,7 @@ End Sub
 Sub CPU_ORI
 	cpu.GPR(RT)= cpu.GPR(RS) + imm
 End Sub
-Sub CPU_RFE
-	SR And= &hFFFFFFC0
-	SR Or= ((SR And &h3C) Shr 2)
-End Sub
+
 Sub CPU_SB
 	Dim As Integer addr = CShort(imm) + cpu.GPR(RS)
 	Dim As Integer value = cpu.GPR(RT) And &hFF
@@ -596,7 +599,6 @@ End Sub
 Sub CPU_XORI
 	cpu.GPR(RT)= cpu.GPR(RS) xor imm
 End Sub
-
 Sub decodeInstruction
 	'If cpu.opcode <> 0 Then 
 	Select Case (cpu.opcode Shr 21)
@@ -621,15 +623,17 @@ Sub decodeInstruction
 		Case Else
 	End Select
 	Select Case (cpu.opcode Shr 25)
-		Case &h21
-			Dim As UByte temp = cpu.opcode And &h2F
-			If temp = &h10 Then 
-				cpu.Operation = "RFE" 
-				CPU_RFE 
-			Else 
-				cpu.Operation = "COP0"
-				CPU_COP0
-			EndIf
+        Case &h21
+            Dim As Uinteger temp = cpu.opcode
+            temp = temp Shl 26
+            temp = temp Shr 26
+            If temp = &h10 Then 
+                cpu.Operation = "RFE" 
+                CPU_RFE 
+            Else 
+                cpu.Operation = "COP0"
+                CPU_COP0
+            EndIf
 		Case &h25
 			cpu.Operation = "COP2"
 			CPU_COP2
