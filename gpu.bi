@@ -2,7 +2,7 @@ Type gpus
 	hRes As UInteger
 	vRes As UInteger
 	vram (0 To &hFFFFF) As UByte 
-	GPUSTAT As UInteger
+	GPUSTAT As UInteger = &h10000000
 	command_Count As UByte
 	command_Flag As UByte
 	command_Buffer(0 To 11) As UInteger 
