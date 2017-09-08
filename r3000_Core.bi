@@ -93,7 +93,7 @@ Sub initCPU
 	'cpu.current_PC = &hBFC00000
 	cpu.current_PC = cpu.Reset_Vector
 	cop0.reg(12) Or= &h400000 'Set BEV
-	gpu.GPUSTAT = &h10000000 'Set bit 28
+	gpu.GPUSTAT(3) = &h10 'Set bit 28
 End Sub
 
 Sub fetchInstruction 'Copies 4 bytes to a 32-bit opcode variable
@@ -149,9 +149,84 @@ Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 		Case &h1070 To &h1073 'interrupt Enable
 			port.iEnable or= (value Shl (24-((addr And &h3)*8))) 
 		Case &h1074 To &h1077 'Interrupt Mask
-			
-		Case &h1080 To &h10F4 'DMA Registers
-			
+		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''			
+		Case &h1080 To &h1083 'DMA0 Registers
+			If addr And &h3 = 0 Then DMA0.base_address = 0
+			DMA0.base_address Or=(value Shl(24-((addr And &h3)*8)))
+		Case &h1084 To &h1087
+			If addr And &h3 = 0 Then DMA0.block_control = 0
+			DMA0.block_control Or=(value Shl(24-((addr And &h3)*8)))
+			checkTrigger(0)
+		Case &h1088 To &h108B
+			If addr And &h3 = 0 Then DMA0.channel_control = 0
+			DMA0.channel_control Or=(value Shl(24-((addr And &h3)*8)))
+		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''			
+		Case &h1090 To &h1093 'DMA1 Registers
+			If addr And &h3 = 0 Then DMA1.base_address = 0
+			DMA1.base_address Or=(value Shl(24-((addr And &h3)*8)))
+		Case &h1094 To &h1097
+			If addr And &h3 = 0 Then DMA1.block_control = 0
+			DMA1.block_control Or=(value Shl(24-((addr And &h3)*8)))
+			checkTrigger(1)
+		Case &h1098 To &h109B
+			If addr And &h3 = 0 Then DMA1.channel_control = 0
+			DMA1.channel_control Or=(value Shl(24-((addr And &h3)*8)))
+		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''			
+		Case &h10A0 To &h10A3 'DMA2 Registers
+			If addr And &h3 = 0 Then DMA2.base_address = 0
+			DMA2.base_address Or=(value Shl(24-((addr And &h3)*8)))
+		Case &h10A4 To &h10A7
+			If addr And &h3 = 0 Then DMA2.block_control = 0
+			DMA2.block_control Or=(value Shl(24-((addr And &h3)*8)))
+			checkTrigger(2)
+		Case &h10A8 To &h10AB
+			If addr And &h3 = 0 Then DMA2.channel_control = 0
+			DMA2.channel_control Or=(value Shl(24-((addr And &h3)*8)))
+		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''			
+		Case &h10B0 To &h10B3 'DMA3 Registers
+			If addr And &h3 = 0 Then DMA3.base_address = 0
+			DMA3.base_address Or=(value Shl(24-((addr And &h3)*8)))
+		Case &h10B4 To &h10B7
+			If addr And &h3 = 0 Then DMA3.block_control = 0
+			DMA3.block_control Or=(value Shl(24-((addr And &h3)*8)))
+			checkTrigger(3)
+		Case &h10B8 To &h10BB
+			If addr And &h3 = 0 Then DMA3.channel_control = 0
+			DMA3.channel_control Or=(value Shl(24-((addr And &h3)*8)))
+		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		Case &h10C0 To &h10C3 'DMA4 Registers
+			If addr And &h3 = 0 Then DMA4.base_address = 0
+			DMA4.base_address Or=(value Shl(24-((addr And &h3)*8)))
+		Case &h10C4 To &h10C7
+			If addr And &h3 = 0 Then DMA4.block_control = 0	
+			DMA4.block_control Or=(value Shl(24-((addr And &h3)*8)))
+			checkTrigger(4)
+		Case &h10C8 To &h10CB
+			If addr And &h3 = 0 Then DMA4.channel_control = 0
+			DMA4.channel_control Or=(value Shl(24-((addr And &h3)*8)))
+		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		Case &h10D0 To &h10D3 'DMA5 Registers
+			If addr And &h3 = 0 Then DMA5.base_address = 0
+			DMA5.base_address Or=(value Shl(24-((addr And &h3)*8)))
+		Case &h10D4 To &h10D7
+			If addr And &h3 = 0 Then DMA5.block_control = 0
+			DMA5.block_control Or=(value Shl(24-((addr And &h3)*8)))
+			checkTrigger(5)
+		Case &h10D8 To &h10DB
+			If addr And &h3 = 0 Then DMA5.channel_control = 0
+			DMA5.channel_control Or=(value Shl(24-((addr And &h3)*8)))
+		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		Case &h10E0 To &h10E3 'DMA6 Registers
+			If addr And &h3 = 0 Then DMA6.base_address = 0
+			DMA6.base_address Or=(value Shl(24-((addr And &h3)*8)))
+		Case &h10E4 To &h10E7
+			If addr And &h3 = 0 Then DMA6.block_control = 0	
+			DMA6.block_control Or=(value Shl(24-((addr And &h3)*8)))
+			checkTrigger(6)
+		Case &h10E8 To &h10EB
+			If addr And &h3 = 0 Then DMA6.channel_control = 0
+			DMA6.channel_control Or=(value Shl(24-((addr And &h3)*8)))
+		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &h1100 To &h1120 'Timers
 		Case &h1800 To &h1804 'CD ROM
 		Case &h1810	'GP0
@@ -221,12 +296,11 @@ Function ReadIO(ByVal addr As UInteger) As ubyte
 	Dim value As UByte
 	Select Case addr
 		Case &h1f801814 To &h1f801817
-			Dim As UByte shift = addr And 3
-			value = (gpu.GPUSTAT Shr (24-(shift*8)))
+			value = &hFF
 			Print "Reading GPUSTAT!" 
 	End Select
 	
-	Return value
+	Return &hFF
 End Function
 Function ReadByte(ByVal addr As UInteger) As UInteger
 		'Memory is split into a few different regions
@@ -242,9 +316,15 @@ Function ReadByte(ByVal addr As UInteger) As UInteger
 			value = cpu.bios(addr and &h7FFFF)
 		Case &h1F000000 To &h1F7FFFFF 'Expansion Port
 			value = cpu.expansion(addr And &h7FFFFF)
-		Case &h1F801000 To &h1F801FFC 'I/O Ports
-			Print #99, "Reading I/O Port at: " & Hex(addr)
-			ReadIO(addr)
+		Case &h1F8010F0 To &h1F8010F3
+			value = (dma_Interrupt Shr ((addr And 3)*8) And &hFF)
+			Print #99, "Reading DMA Control"
+		Case &h1F801814 To &h1F801817
+			value = gpu.GPUSTAT(addr - &h1f801814)
+			Print #99, "Reading GPU STAT"
+		'Case &h1F801000 To &h1F801FFC 'I/O Ports
+		'	Print #99, "Reading I/O Port at: " & Hex(addr)
+		'	ReadIO(addr)
 		Case &h1FC00000 To &h1FC7FFFF
 			value = cpu.bios(addr - &h1FC00000)
 		Case Else 

@@ -2,6 +2,7 @@
 Using fb
 #Include Once "file.bi"
 #Include Once "gpu.bi"
+#Include Once "dma.bi"
 #Include Once "r3000_Core.bi"
 #Include Once "r3000_cop0.bi"
 #Include Once "gte.bi"
@@ -13,6 +14,7 @@ Declare Sub dumpMemory
 Declare Sub runCPU
 '#Define debug
 Sub writeLog
+#Ifdef debug
 Print #99, "-----------------------------------"
 print #99, "Program Counter: " & hex(cpu.current_PC-4)
 Print #99, "Opcode: " & Hex(cpu.opcode) & " = " & cpu.Operation 
@@ -28,6 +30,7 @@ If logWrites >= splitlog Then
 	Close #99
 	Open "logs/log" + Str(logFile) + ".txt" For Output As #99
 EndIf
+#endif
 End Sub
 Sub dumpMemory
 	Open "mem.txt" For Output As #77
@@ -76,7 +79,14 @@ End Sub
 '''''''''''''''''''''''''''''''''''''''
 loadBIOS 
 initCPU
-ScreenRes(600,800,32)
+ScreenRes 640, 480, 32,
+
+
+
+
+
+
+
 'Wait for start input. 
 Do 
 	cls
@@ -90,7 +100,6 @@ runCPU
 #Ifdef debug
 writeLog
 #EndIf
-
 
 
 cpu.GPR(0) = 0 'Keep Zero Register clean. 
