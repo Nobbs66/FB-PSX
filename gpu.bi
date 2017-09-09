@@ -21,7 +21,8 @@ Dim Shared gpu As gpus
 #Define y4	CShort((gpu.command_Buffer(5) Shr 16) And &h7FF)
 
 
-Declare Function gpuCommand(ByVal port As UShort)As ubyte
+Declare Function gpuCommand(ByVal port As UShort)As UByte
+Declare Function gp1Command(ByVal Data As UInteger) As UByte 'GP1
 'Primitive Drawing commands
 Declare Sub monoTri
 Declare Sub textTri 
@@ -42,6 +43,27 @@ Declare Sub tileRect
 Declare Sub tileSprite
 Declare Sub dTileRect
 Declare Sub dTileSprite
+Function gp1Command(ByVal dat As UInteger) As UByte 'GP1
+	Select Case ((dat Shr 24)And &hFF)
+		Case 0'Reset GPU
+			gpu.GPUSTAT = &h14802000
+		Case 1 'Reset Command Buffer
+			For i As Integer = 0 To &hF
+				gpu.command_Buffer(i) = 0 
+			Next
+		Case 2 'Acknowledge GPU Interrupt
+			gpu.GPUSTAT -= &h1000000
+		Case 3
+			gpu.GPUSTAT Or= &h800000
+		Case 4
+			Dim As UInteger temp = ((dat And &h3)Shl 29)
+			gpu.GPUSTAT Or= temp
+		Case 5
+			
+		Case 6
+	End Select
+	Return 0
+End Function
 Function gpuCommand(ByVal port As Ushort)As ubyte 'GP0
 	If port = &h1810 Then 
 	Select Case gpu.command_Buffer(0)
@@ -99,6 +121,7 @@ Function gpuCommand(ByVal port As Ushort)As ubyte 'GP0
 			'Copy Rect V-C
 	End Select
 	ElseIf port = &h1814 Then 
+		
 	EndIf
 	
 For i As Integer = 0 To 11 'Clear buffer after drawing

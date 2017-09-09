@@ -61,31 +61,38 @@ Dim Shared DMA6 As DMAs6
 Function startDMA(ByVal ch As UByte)As UByte
 	Select Case ch
 		Case 0
+			Print #99, "DMA0 START"
 			dBase = DMA0.base_address
 			block = DMA0.block_control
 			channel = DMA0.channel_control
 			
 		Case 1
+			Print #99, "DMA1 START"
 			dBase = DMA1.base_address
 			block = DMA1.block_control
 			channel = DMA1.channel_control
 		Case 2
+			Print #99, "DMA2 START"
 			dBase = DMA2.base_address
 			block = DMA2.block_control
 			channel = DMA2.channel_control
 		Case 3
+			Print #99, "DMA3 START"
 			dBase = DMA3.base_address
 			block = DMA3.block_control
 			channel = DMA3.channel_control
 		Case 4
+			Print #99, "DMA4 START"
 			dBase = DMA4.base_address
 			block = DMA4.block_control
 			channel = DMA4.channel_control
 		Case 5
+			Print #99, "DMA5 START"
 			dBase = DMA5.base_address
 			block = DMA5.block_control
 			channel = DMA5.channel_control
 		Case 6
+			Print #99, "DMA6 START"
 			dBase = DMA6.base_address
 			block = DMA6.block_control
 			channel = DMA6.channel_control
