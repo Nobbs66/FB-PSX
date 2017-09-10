@@ -2,7 +2,7 @@ Type gpus
 	hRes As UInteger
 	vRes As UInteger
 	vram (0 To &hFFFFF) As UByte 
-	GPUSTAT As UInteger = &h10000000
+	GPUSTAT As UInteger = &h14802000
 	command_Count As UByte
 	command_Flag As UByte
 	command_Buffer(0 To 11) As UInteger 
@@ -44,6 +44,7 @@ Declare Sub tileSprite
 Declare Sub dTileRect
 Declare Sub dTileSprite
 Function gp1Command(ByVal dat As UInteger) As UByte 'GP1
+	Print #99, "GP1 Command Recieved: " & Hex(dat Shr 24)
 	Select Case ((dat Shr 24)And &hFF)
 		Case 0'Reset GPU
 			gpu.GPUSTAT = &h14802000
@@ -58,9 +59,19 @@ Function gp1Command(ByVal dat As UInteger) As UByte 'GP1
 		Case 4
 			Dim As UInteger temp = ((dat And &h3)Shl 29)
 			gpu.GPUSTAT Or= temp
-		Case 5
+		Case 5 'Start of Display
 			
-		Case 6
+		Case 6 'Horizontal Display range
+		
+		Case 7 'Vertical display Range
+			
+		Case 8 'Display Mode
+			Print #99, "GPUSTAT: " & Hex(gpu.GPUSTAT)
+			gpu.GPUSTAT -= &h7F4000 'Clear bits 14, 16-22
+			gpu.GPUSTAT Or= ((dat And &h3F) Shl 17) 'Set Bits 17-22
+			gpu.GPUSTAT Or= ((dat And &h40) Shl 10) 'Set Bit 16
+			gpu.GPUSTAT Or= ((dat And &h80) Shl 7)  'Set Bit 14
+			Print #99, "GPUSTAT: " & Hex(gpu.GPUSTAT)
 	End Select
 	Return 0
 End Function
