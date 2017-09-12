@@ -4,38 +4,10 @@ Declare Sub validBIOS
 Declare Sub initCPU
 Declare Sub loadDelay
 Declare Function WriteByte(ByVal addr As UInteger, ByVal value As UByte) As UInteger
+Declare Function writeWord(ByVal addr As UInteger, value As UInteger) As UByte
 Declare function ReadByte(ByVal addr As UInteger) As UInteger
+Declare Function readWord(ByVal addr As UInteger) As UInteger
 Dim Shared As UInteger temp 
-Type cpus
-	memory(&h200000) As UByte
-	iCache(&hFFF) As ubyte
-	dCache(&h400) As UByte
-	expansion(&h800000) As UByte
-	GPR(32) As UInteger
-	dGPR(32) As UInteger 'Load Delay GPR set
-	fGPR(32) As Ubyte 'Load Delay flags
-	current_PC As UInteger
-	delayReg As UByte
-	delayValue As UInteger
-	delayFlag As UByte
-	delay_slot_PC As UInteger 
-	branch_queued As UByte
-	HI As UInteger
-	breakPoint As UByte
-	LO As UInteger
-	bios(&h80000) As UByte
-	opcode As UInteger
-	Operation As String
-	memSize As UByte
-	delayLatch As UByte
-	storeAddress As UByte
-   storedAddress As UInteger
-   storeValue As UInteger
-	ophistory(0 To &hFF) As String 
-   const Reset_Vector As UInteger = &hBFC00000
-   bootStatus As UByte
-   instructions As Uinteger 
-End Type
 
 
 Type cop0s
@@ -55,7 +27,7 @@ Const As UInteger KSEG0 = &h80000000
 Const As UInteger KSEG1 = &hA0000000
 Open "logs/log0.txt" For Output As #99
 Open "writes.txt" For Output As #88
-Dim Shared cpu As cpus
+
 Dim Shared cop0 As cop0s
 Dim Shared port As ports
 Dim Shared As UInteger logWrites = 0, logfile = 0, splitLog = 10000000
@@ -160,12 +132,12 @@ Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 			DMA0.block_control Or=value Shl((addr And &h3)*8)
 			Print #99, "Set DMA0 Block Control"
 			If (addr And 3) = 3 Then Print #99, Hex(DMA0.block_control)
-			checkTrigger(0)
 		Case &h1088 To &h108B
 			If addr And &h3 = 0 Then DMA0.channel_control = 0
 			DMA0.channel_control Or=value Shl((addr And &h3)*8)
 			Print #99, "Set DMA0 Channel Control"
-			If (addr And &h3) = 3 Then print Hex(DMA0.channel_control)
+			If (addr And &h3) = 3 Then print #99, Hex(DMA0.channel_control)
+			checkTrigger(0)
 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''			
 		Case &h1090 To &h1093 'DMA1 Registers
 			If addr And &h3 = 0 Then DMA1.base_address = 0
@@ -177,12 +149,12 @@ Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 			DMA1.block_control Or=value Shl((addr And &h3)*8)
 			Print #99, "Set DMA1 Block Control"
 			If (addr And 3) = 3 Then Print #99, Hex(DMA1.block_control)
-			checkTrigger(1)
 		Case &h1098 To &h109B
 			If addr And &h3 = 0 Then DMA1.channel_control = 0
 			DMA1.channel_control Or=value Shl((addr And &h3)*8)
 			Print #99, "Set DMA1 Channel Control"
-			If (addr And &h3) = 3 Then print Hex(DMA1.channel_control)
+			If (addr And &h3) = 3 Then print #99, Hex(DMA1.channel_control)
+			checkTrigger(1)
 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''			
 		Case &h10A0 To &h10A3 'DMA2 Registers
 			If addr And &h3 = 0 Then DMA2.base_address = 0
@@ -192,14 +164,17 @@ Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 		Case &h10A4 To &h10A7
 			If addr And &h3 = 0 Then DMA2.block_control = 0
 			DMA2.block_control Or=value Shl((addr And &h3)*8)
+			Print #99, Hex(DMA2.block_control)
 			Print #99, "Set DMA2 Block Control"
 			If (addr And 3) = 3 Then Print #99, Hex(DMA2.block_control)
-			checkTrigger(2)
 		Case &h10A8 To &h10AB
-			If addr And &h3 = 0 Then DMA2.channel_control = 0
+			'If (addr And &h3) = 0 Then Print #99,"Initial control: " & Hex(DMA2.channel_control)
+			If addr = &h10A8 Then DMA2.channel_control = 0
+			'Print #99, "Raw Value: " & Hex(value)
 			DMA2.channel_control Or=value Shl((addr And &h3)*8)
 			Print #99, "Set DMA2 Channel Control"
-			If (addr And &h3) = 3 Then print Hex(DMA2.channel_control)
+			If (addr And &h3) = 3 Then print #99, Hex(DMA2.channel_control)
+			checkTrigger(2)
 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''			
 		Case &h10B0 To &h10B3 'DMA3 Registers
 			If addr And &h3 = 0 Then DMA3.base_address = 0
@@ -211,92 +186,92 @@ Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 			DMA3.block_control Or=value Shl((addr And &h3)*8)
 			Print #99, "Set DMA3 Block Control"
 			If (addr And 3) = 3 Then Print #99, Hex(DMA3.block_control)
-			checkTrigger(3)
 		Case &h10B8 To &h10BB
 			If addr And &h3 = 0 Then DMA3.channel_control = 0
 			DMA3.channel_control Or=value Shl((addr And &h3)*8)
 			Print #99, "Set DMA Channel Control"
-			If (addr And &h3) = 3 Then print Hex(DMA3.channel_control)
+			If (addr And &h3) = 3 Then print #99, Hex(DMA3.channel_control)
+			checkTrigger(3)
 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &h10C0 To &h10C3 'DMA4 Registers
-			If addr And &h3 = 0 Then DMA4.base_address = 0
+			If &h10C0 - addr = 0 Then DMA4.base_address = 0
 			DMA4.base_address Or=value Shl((addr And &h3)*8)
 			Print #99, "Set DMA4 Base Address"
 			If (addr And 3) = 3 Then Print #99, Hex(DMA4.base_address)
 		Case &h10C4 To &h10C7
-			If addr And &h3 = 0 Then DMA4.block_control = 0	
+			If &h10C4 - addr = 0 Then DMA4.block_control = 0	
 			DMA4.block_control Or=value Shl((addr And &h3)*8)
 			Print #99, "Set DMA4 Block Control"
 			If (addr And 3) = 3 Then Print #99, Hex(DMA4.block_control)
-			checkTrigger(4)
 		Case &h10C8 To &h10CB
-			If addr And &h3 = 0 Then DMA4.channel_control = 0
+			If &h10C8 - addr = 0 Then DMA4.channel_control = 0
 			DMA4.channel_control Or=value Shl((addr And &h3)*8)
 			Print #99, "Set DMA4 Channel Control"
-			If (addr And &h3) = 3 Then print Hex(DMA4.channel_control)
+			If (addr And &h3) = 3 Then print #99, Hex(DMA4.channel_control)
+			checkTrigger(4)
 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &h10D0 To &h10D3 'DMA5 Registers
-			If addr And &h3 = 0 Then DMA5.base_address = 0
+			If &h10D0 - addr = 0 Then DMA5.base_address = 0
 			DMA5.base_address Or=value Shl((addr And &h3)*8)
 			Print #99, "Set DMA5 Base Address"
 			If (addr And 3) = 3 Then Print #99, Hex(DMA5.base_address)
 		Case &h10D4 To &h10D7
-			If addr And &h3 = 0 Then DMA5.block_control = 0
+			If &h10D4 - addr = 0 Then DMA5.block_control = 0
 			DMA5.block_control Or=value Shl((addr And &h3)*8)
 			Print #99, "Set DMA5 Block Control"
 			If (addr And 3) = 3 Then Print #99, Hex(DMA5.block_control)
-			checkTrigger(5)
 		Case &h10D8 To &h10DB
-			If addr And &h3 = 0 Then DMA5.channel_control = 0
+			If &h10D8 - addr = 0 Then DMA5.channel_control = 0
 			DMA5.channel_control Or=value Shl((addr And &h3)*8)
 			Print #99, "Set DMA5 Channel Control"
-			If (addr And &h3) = 3 Then print Hex(DMA5.channel_control)
+			If (addr And &h3) = 3 Then print #99, Hex(DMA5.channel_control)
+			checkTrigger(5)
 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &h10E0 To &h10E3 'DMA6 Registers
-			If addr And &h3 = 0 Then DMA6.base_address = 0
+			If &h10E0 - addr = 0 Then DMA6.base_address = 0
 			DMA6.base_address Or=value Shl((addr And &h3)*8)
 			Print #99, "Set DMA6 Base Address"
 			If (addr And 3) = 3 Then Print #99, Hex(DMA6.base_address)
 		Case &h10E4 To &h10E7
-			If addr And &h3 = 0 Then DMA6.block_control = 0	
+			If &h10E4 - addr = 0 Then DMA6.block_control = 0	
 			DMA6.block_control Or=value Shl((addr And &h3)*8)
 			Print #99, "Set DMA6 Block Control"
 			If (addr And 3) = 3 Then Print #99, Hex(DMA6.block_control)
-			checkTrigger(6)
 		Case &h10E8 To &h10EB
-			If addr And &h3 = 0 Then DMA6.channel_control = 0
+			If &h10E8 - addr = 0 = 0 Then DMA6.channel_control = 0
 			DMA6.channel_control Or= value Shl((addr And &h3)*8)
 			Print #99, "Set DMA6 Channel Control"
-			If (addr And &h3) = 3 Then print Hex(DMA6.channel_control)
+			If (addr And &h3) = 3 Then print #99, Hex(DMA6.channel_control)
+			checkTrigger(6)
 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &h10F0 To &h10F3
-			If addr And &h3 = 0 Then dma_Control = 0
+			If &h10F0 - addr = 0 Then dma_Control = 0
 			dma_Control Or=value Shl((addr And &h3)*8)
 			Print #99, "Writing DMA Control"
-			If (addr And &h3) = 3 Then Print dma_Control
+			If (addr And &h3) = 3 Then Print #99, hex(dma_Control)
 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &h10F4 To &h10F7
-			If addr And &h3 = 0 Then dma_Interrupt = 0 
+			If &h10F4 - addr = 0 Then dma_Interrupt = 0 
 			dma_Interrupt Or=value Shl((addr And &h3)*8)
 			Print #99, "Writing DMA Interrupt"
-			If (addr And &h3) = 3 Then Print #99, (dma_Interrupt)
+			If (addr And &h3) = 3 Then Print #99, Hex(dma_Interrupt)
 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &h1100 To &h1120 'Timers
 		Case &h1800 To &h1804 'CD ROM
 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &h1810	To &h1813'GP0
-			If addr And &h3 = 0 Then temp = 0 
+			If addr = &h1810 Then temp = 0 
 			Print #99, "GP1 Command: " & value
 			temp or= value Shl ((addr And &h3) * 8)
 			Print #99, "Command: " & Hex(temp)
 			'gpuCommand(&h1810)
 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &h1814	To &h1817'GP1
-			If addr And &h3 = 0 Then temp = 0 
+			If addr = &h1814 Then temp = 0 
 			Print #99, "GP1 Command: " & value
 			temp or= value Shl ((addr And &h3) * 8)
 			Print #99, "Command: " & Hex(temp)
-			'If addr = &h1817 Then gp1Command(temp)
+			If addr = &h1817 Then gp1Command(temp)
 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &h1820 To &h1828 'MDEC
 		Case &hC000 To &h1FFF 'SPU
@@ -360,6 +335,55 @@ End Function
 Function ReadIO(ByVal addr As UInteger) As ubyte
 	Dim value As UByte
 	Select Case addr
+		Case &h1F801080 To &h1F801083
+			value = ((DMA0.base_address Shr(8*addr And 3))) And &hFF
+		Case &h1F801084 To &h1F801087
+			value = ((DMA0.block_control Shr(8*addr And 3))) And &hFF
+		Case &h1F801088 To &h1F80108B
+			value = ((DMA0.channel_control Shr(8*addr And 3))) And &hFF
+		'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		Case &h1F801090 To &h1F801093
+			value = ((DMA1.base_address Shr(8*addr And 3))) And &hFF
+		Case &h1F801094 To &h1F801097
+			value = ((DMA1.block_control Shr(8*addr And 3))) And &hFF
+		Case &h1F801098 To &h1F80109B
+			value = ((DMA1.channel_control Shr(8*addr And 3))) And &hFF
+		'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		Case &h1F8010A0 To &h1F8010A3
+			value = ((DMA2.base_address Shr(8*addr And 3))) And &hFF
+		Case &h1F8010A4 To &h1F8010A7
+			value = ((DMA2.block_control Shr(8*addr And 3))) And &hFF
+		Case &h1F8010A8 To &h1F8010AB
+			value = ((DMA2.channel_control Shr(8*addr And 3))) And &hFF
+		'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		Case &h1F8010B0 To &h1F8010B3
+			value = ((DMA3.base_address Shr(8*addr And 3))) And &hFF
+		Case &h1F8010B4 To &h1F8010B7
+			value = ((DMA3.block_control Shr(8*addr And 3))) And &hFF
+		Case &h1F8010B8 To &h1F8010BB
+			value = ((DMA3.channel_control Shr(8*addr And 3))) And &hFF
+		'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		Case &h1F8010C0 To &h1F8010C3
+			value = ((DMA4.base_address Shr(8*addr And 3))) And &hFF
+		Case &h1F8010C4 To &h1F8010C7
+			value = ((DMA4.block_control Shr(8*addr And 3))) And &hFF
+		Case &h1F8010C8 To &h1F8010CB
+			value = ((DMA4.channel_control Shr(8*addr And 3))) And &hFF
+		'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		Case &h1F8010D0 To &h1F8010D3
+			value = ((DMA5.base_address Shr(8*addr And 3))) And &hFF
+		Case &h1F8010D4 To &h1F8010D7
+			value = ((DMA5.block_control Shr(8*addr And 3))) And &hFF
+		Case &h1F8010D8 To &h1F8010DB
+			value = ((DMA5.channel_control Shr(8*addr And 3))) And &hFF
+		'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		Case &h1F8010E0 To &h1F8010E3
+			value = ((DMA6.base_address Shr(8*addr And 3))) And &hFF
+		Case &h1F8010E4 To &h1F8010E7
+			value = ((DMA6.block_control Shr(8*addr And 3))) And &hFF
+		Case &h1F8010E8 To &h1F8010EB
+			value = ((DMA6.channel_control Shr(8*addr And 3))) And &hFF
+		'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''	
 		Case &h1f8010f0 To &h1f8010f3
 			value = ((dma_Control Shr (8*(addr And 3))) And &hFF)
 			Print #99, "Reading DMA Control"
@@ -400,6 +424,21 @@ Function ReadByte(ByVal addr As UInteger) As UInteger
 			Print #99, "Bad Read Address at: " & Hex(addr)
 	End Select
 	return value
+End Function
+Function readWord(ByVal addr As UInteger) As UInteger
+	Dim load As integer
+	For i As Integer = 0 To 3
+		load or= (ReadByte(addr+(3-i)) Shl (24-(i*8)))
+	Next
+	Return load
+End Function
+Function writeWord(ByVal addr As UInteger, value As UInteger) As UByte
+	Dim load As Byte
+	For i As Integer = 0 To 3
+		load = ((value Shr i*8) And &hFF)
+		WriteByte(addr+i,load)
+	Next
+Return 0
 End Function
 Sub loadDelay 'Fix this
     For i As Integer = 1 To &h1F

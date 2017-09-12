@@ -3,16 +3,23 @@ Dim Shared As UInteger dma_Interrupt
 Dim Shared As UInteger dbase
 Dim Shared As UInteger block
 Dim Shared As UInteger channel
-
-#Define bAddr			((dbase Shr 0) And &hFFFFFF)
+Dim Shared As UByte dmaEnd
+#Define mAddr			((dbase Shr 0) And &hFFFFFF)
 #Define size			((block Shr 0) And &hFFFF)
 #Define blocks			((block Shr 16) And &hFFFF)
 #Define direction		((channel Shr 0) And 1) 
 #Define mStep			((channel Shr 1) And 1)
-#Define sync			((channel Shr 9) And 2)
+#Define sync			((channel Shr 9) And 3)
+#Define start			((channel Shr 24) And 1)
+
 
 Declare Function checkTrigger(ByVal ch As UByte)As UByte
 Declare Function startDMA(ByVal ch As UByte)As UByte
+Declare Function write32(ByVal addr As UInteger, value As UInteger) As UByte
+Declare Function write8(ByVal addr As UInteger, value As UByte) As UByte
+Declare Sub blockDMA
+Declare Sub chopDMA
+Declare Sub linkDMA
 
 Type DMAs0
 	base_address As UInteger
@@ -57,7 +64,31 @@ Dim Shared DMA3 As DMAs3
 Dim Shared DMA4 As DMAs4
 Dim Shared DMA5 As DMAs5
 Dim Shared DMA6 As DMAs6
-
+Function write8(ByVal addr As UInteger, value As UByte) As UByte
+	'Memory is split into a few different regions
+	Select Case addr
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		Case &h0 To &h7FFFFF 'KUSEG
+			cpu.memory(addr And &h1FFFFF) = value
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+		Case &h80000000 To &h807FFFFF 'KSEG0
+		 	cpu.memory(addr And &h1FFFFF) = value
+		 	Print #88, "Writing KSEG 0"
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''		 	
+		Case &hA0000000 To &hA07FFFFF 'KSEG1
+			cpu.memory(addr And &h1FFFFF) = value
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''			
+	End select
+	return 0 
+End Function
+Function write32(ByVal addr As UInteger, value As UInteger) As UByte
+	Dim load As Byte
+	For i As Integer = 0 To 3
+		load = ((value Shr i*8) And &hFF)
+		write8(addr+i,load)
+	Next
+Return 0
+End Function
 Function startDMA(ByVal ch As UByte)As UByte
 	Select Case ch
 		Case 0
@@ -65,7 +96,6 @@ Function startDMA(ByVal ch As UByte)As UByte
 			dBase = DMA0.base_address
 			block = DMA0.block_control
 			channel = DMA0.channel_control
-			
 		Case 1
 			Print #99, "DMA1 START"
 			dBase = DMA1.base_address
@@ -97,33 +127,86 @@ Function startDMA(ByVal ch As UByte)As UByte
 			block = DMA6.block_control
 			channel = DMA6.channel_control
 	End Select
+	
+	Select Case sync
+		Case 0
+			Print #99, "Block DMA"
+			blockDMA
+		Case 1
+			Print #99, "ChopDMA"
+			chopDMA
+		Case 2
+			Print #99, "Linked List DMA"
+			linkDMA
+	End Select
+	
 Return 0
 End Function
-
 Function checkTrigger(ByVal ch As UByte)As UByte
 	Dim stat As UByte
 	Select Case ch
 		Case 0
-			Dim As uinteger temp = ((DMA0.block_control And &h100000)Shr 24)
-			If temp = 1 Then startDMA(0)
+			channel = DMA0.channel_control
+			Print #99, "Triggered: " & Hex(start)
+			If start = 1 Then startDMA(0)
+			If dmaEnd <> 0 Then DMA0.channel_control -= &h11000000
+			dmaEnd = 0 
 		Case 1
-			Dim As uinteger temp = ((DMA1.block_control And &h100000)Shr 24)
-			If temp = 1 Then startDMA(1)
+			channel = DMA1.channel_control
+			Print #99, "Triggered: " & Hex(start)
+			If start = 1 Then startDMA(1)
+			If dmaEnd <> 0 Then DMA1.channel_control -= &h11000000
+			dmaEnd = 0
 		Case 2
-			Dim As uinteger temp = ((DMA2.block_control And &h100000)Shr 24)
-			If temp = 1 Then startDMA(2)
+			channel = DMA2.channel_control
+			Print #99, "Triggered: " & Hex(start)
+			If start = 1 Then startDMA(2)
+			If dmaEnd <> 0 Then DMA2.channel_control -= &h11000000
+			dmaEnd = 0
 		Case 3
-			Dim As uinteger temp = ((DMA3.block_control And &h100000)Shr 24)
-			If temp = 1 Then startDMA(3)
+			channel = DMA3.channel_control
+			Print #99, "Triggered: " & Hex(start)
+			If start = 1 Then startDMA(3)
+			If dmaEnd <> 0 Then DMA3.channel_control -= &h11000000
+			dmaEnd = 0
 		Case 4
-			Dim As uinteger temp = ((DMA4.block_control And &h100000)Shr 24)
-			If temp = 1 Then startDMA(4)
+			channel = DMA4.channel_control
+			Print #99, "Triggered: " & Hex(start)
+			If start = 1 Then startDMA(4)
+			If dmaEnd <> 0 Then DMA4.channel_control -= &h11000000
+			dmaEnd = 0
 		Case 5
-			Dim As uinteger temp = ((DMA5.block_control And &h100000)Shr 24)
-			If temp = 1 Then startDMA(5)	
+			channel = DMA5.channel_control
+			Print #99, "Triggered: " & Hex(start)
+			If start = 1 Then startDMA(5)
+			If dmaEnd <> 0 Then DMA5.channel_control -= &h11000000
+			dmaEnd = 0	
 		Case 6
-			Dim As uinteger temp = ((DMA6.block_control And &h100000)Shr 24)
-			If temp = 1 Then startDMA(6)
+			channel = DMA6.channel_control
+			Print #99, "Triggered: " & Hex(start)
+			Print #99, "DMA STAT: " & Hex(DMA6.channel_control)
+			If start = 1 Then startDMA(6)
+			If dmaEnd <> 0 Then DMA6.channel_control -= &h11000000
+			dmaEnd = 0
 	End Select
-	Return stat
+Return 0
 End Function
+Sub blockDMA
+	Dim As UInteger mEnd = mAddr - ((size*4)-8)
+	If size <> 0 Then 'Protect from underflow. 
+		For i As Integer = mAddr To mEnd Step -4
+			write32(i,i-4)
+			
+			Print #88, "Addres: " & Hex(i) & " : " & Hex(cpu.memory(i And &h1FFFFF))
+		Next
+		write32(mEnd-4,&hFFFFFFFF)
+		Print #88, "Addres: " & Hex(mEnd-4) & " : " & Hex(cpu.memory((mEnd -4) And &h1FFFFF))
+		dmaEnd = 1 
+	endif
+End Sub
+Sub chopDMA
+	
+End Sub
+Sub linkDMA
+	
+End Sub

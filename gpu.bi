@@ -2,7 +2,7 @@ Type gpus
 	hRes As UInteger
 	vRes As UInteger
 	vram (0 To &hFFFFF) As UByte 
-	GPUSTAT As UInteger = &h14802000
+	GPUSTAT As UInteger = &h1c000000
 	command_Count As UByte
 	command_Flag As UByte
 	command_Buffer(0 To 11) As UInteger 
@@ -47,7 +47,7 @@ Function gp1Command(ByVal dat As UInteger) As UByte 'GP1
 	Print #99, "GP1 Command Recieved: " & Hex(dat Shr 24)
 	Select Case ((dat Shr 24)And &hFF)
 		Case 0'Reset GPU
-			gpu.GPUSTAT = &h14802000
+		'	gpu.GPUSTAT = &h14802000
 		Case 1 'Reset Command Buffer
 			For i As Integer = 0 To &hF
 				gpu.command_Buffer(i) = 0 
@@ -76,7 +76,7 @@ Function gp1Command(ByVal dat As UInteger) As UByte 'GP1
 	Return 0
 End Function
 Function gpuCommand(ByVal port As Ushort)As ubyte 'GP0
-	If port = &h1810 Then 
+
 	Select Case gpu.command_Buffer(0)
 		Case &h00
 			'NOP
@@ -131,14 +131,6 @@ Function gpuCommand(ByVal port As Ushort)As ubyte 'GP0
 		Case &hC0
 			'Copy Rect V-C
 	End Select
-	ElseIf port = &h1814 Then 
-		
-	EndIf
-	
-For i As Integer = 0 To 11 'Clear buffer after drawing
-	gpu.command_Buffer(i) = 0 
-Next
-
 	Return 0
 End Function
 

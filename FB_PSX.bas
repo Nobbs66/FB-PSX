@@ -1,8 +1,39 @@
 #Include Once "fbgfx.bi"
 Using fb
+Type cpus
+	memory(&h200000) As UByte
+	iCache(&hFFF) As ubyte
+	dCache(&h400) As UByte
+	expansion(&h800000) As UByte
+	GPR(32) As UInteger
+	dGPR(32) As UInteger 'Load Delay GPR set
+	fGPR(32) As Ubyte 'Load Delay flags
+	current_PC As UInteger
+	delayReg As UByte
+	delayValue As UInteger
+	delayFlag As UByte
+	delay_slot_PC As UInteger 
+	branch_queued As UByte
+	HI As UInteger
+	breakPoint As UByte
+	LO As UInteger
+	bios(&h80000) As UByte
+	opcode As UInteger
+	Operation As String
+	memSize As UByte
+	delayLatch As UByte
+	storeAddress As UByte
+   storedAddress As UInteger
+   storeValue As UInteger
+	ophistory(0 To &hFF) As String 
+   const Reset_Vector As UInteger = &hBFC00000
+   bootStatus As UByte
+   instructions As Uinteger 
+End Type
+Dim Shared cpu As cpus
 #Include Once "file.bi"
 #Include Once "gpu.bi"
-#Include Once "dma.bi"
+#Include "dma.bi"
 #Include Once "r3000_Core.bi"
 #Include Once "r3000_cop0.bi"
 #Include Once "gte.bi"
@@ -104,8 +135,8 @@ writeLog
 
 cpu.GPR(0) = 0 'Keep Zero Register clean. 
 cpu.instructions += 1
-
-
+gpu.GPUSTAT Or= &hC000000
+If cpu.instructions > 20000000 Then CAE
 If cpu.instructions Mod &hFFFF = 0 Then Print "Instructions Executed " &  cpu.instructions
 Loop While Not MultiKey(SC_ESCAPE)
 
