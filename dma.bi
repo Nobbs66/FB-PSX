@@ -15,8 +15,10 @@ Dim Shared As UByte dmaEnd
 
 Declare Function checkTrigger(ByVal ch As UByte)As UByte
 Declare Function startDMA(ByVal ch As UByte)As UByte
+Declare Function read32(ByVal addr As UInteger) As Uinteger
 Declare Function write32(ByVal addr As UInteger, value As UInteger) As UByte
 Declare Function write8(ByVal addr As UInteger, value As UByte) As UByte
+Declare Function read8(ByVal addr As UInteger) As UByte
 Declare Sub blockDMA
 Declare Sub chopDMA
 Declare Sub linkDMA
@@ -89,6 +91,17 @@ Function write32(ByVal addr As UInteger, value As UInteger) As UByte
 	Next
 Return 0
 End Function
+Function read32(ByVal addr As UInteger) As UInteger
+	Dim As UInteger temp
+	For i As Integer = 0 To 3 
+		temp or= (read8(addr+(3-i)) Shl (24-(i*8)))
+	Next
+	Return temp 
+End Function
+Function read8(ByVal addr As UInteger) As UByte
+	Dim As UByte temp = cpu.memory(addr And &h1FFFFF)
+	Return temp
+End Function
 Function startDMA(ByVal ch As UByte)As UByte
 	Select Case ch
 		Case 0
@@ -149,20 +162,18 @@ Function checkTrigger(ByVal ch As UByte)As UByte
 			channel = DMA0.channel_control
 			Print #99, "Triggered: " & Hex(start)
 			If start = 1 Then startDMA(0)
-			If dmaEnd <> 0 Then DMA0.channel_control -= &h11000000
-			dmaEnd = 0 
+			DMA0.channel_control -= &h11000000 
 		Case 1
 			channel = DMA1.channel_control
 			Print #99, "Triggered: " & Hex(start)
 			If start = 1 Then startDMA(1)
-			If dmaEnd <> 0 Then DMA1.channel_control -= &h11000000
-			dmaEnd = 0
+			DMA1.channel_control -= &h11000000
+			
 		Case 2
 			channel = DMA2.channel_control
-			Print #99, "Triggered: " & Hex(start)
+			Print #99, "Trigger Bit: " & Hex(start)
 			If start = 1 Then startDMA(2)
-			If dmaEnd <> 0 Then DMA2.channel_control -= &h11000000
-			dmaEnd = 0
+			DMA2.channel_control = BitReset(DMA2.channel_control,24)
 		Case 3
 			channel = DMA3.channel_control
 			Print #99, "Triggered: " & Hex(start)
@@ -207,6 +218,53 @@ End Sub
 Sub chopDMA
 	
 End Sub
-Sub linkDMA
-	
-End Sub
+'Sub linkDMA
+'	Dim As UInteger addr = mAddr
+'	Dim As UInteger header = mAddr And &hFFFFFF
+'	Dim As UByte MSB = read32(addr)
+'	MSB = ((MSB Shr 24) And &hFF)
+'	If header <> &hFFFFFF Then 
+'	Do 
+'		Cls 
+'		Print "MSB " & Hex(MSB)
+'		sleep
+'		If MSB <> 0 Then 
+'			Print "Entries: " & Hex(MSB)
+'				For i As Integer = 1 To MSB
+'					gpu.command_Buffer(i-1) = read32(addr + (4*i))
+'					Print #99, Hex(gpu.command_Buffer(i-1))
+'				Next
+'			gpuCommand(0)
+'		EndIf
+'		addr = read32(addr And &h1FFFFF)
+'		MSB = read32(addr)
+'		header = addr And &hFFFFFF
+'		MSB = ((MSB Shr 24) And &hFF)
+'	Loop While header <> &hFFFFFF
+'	EndIf 
+'	Print "DMA Done" 
+'End Sub
+sub linkDMA
+
+dim as uinteger addr = mAddr
+dim as uinteger header = (read32(addr and &h1FFFFF) And &hFFFFFF)
+dim as uinteger MSB = ((read32(addr) shr 24) and &hFF)
+
+if header <> &hFFFFFF then 
+Print #99, Hex(header)
+	Do
+		if MSB <> 0 then 
+			for i as integer = 1 to MSB
+				gpu.command_Buffer(i-1) = read32(addr + (4*i))
+				print #99, "Command: " & hex(gpu.command_Buffer(i-1))
+			next
+			gpuCommand(0)
+		endif
+	addr = read32(addr and &h1FFFFF)
+	header = (read32(addr and &h1FFFFF) And &hFFFFFF)
+	MSB = ((read32(addr) Shr 24) and &hFF)
+	loop while header <> &hFFFFFF
+endif
+print #99, "DMA Complete"
+
+end Sub

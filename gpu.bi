@@ -5,20 +5,25 @@ Type gpus
 	GPUSTAT As UInteger = &h1c000000
 	command_Count As UByte
 	command_Flag As UByte
-	command_Buffer(0 To 11) As UInteger 
+	command_Buffer(0 To 15) As UInteger 
+	command_Pointer As UInteger
 End Type
 Dim Shared gpu As gpus
 #Define R 	(gpu.command_Buffer(0) And &hFF)
-#Define G 	(cpu.command_Buffer(0) Shr 8) And &hFF
+#Define G 	(gpu.command_Buffer(0) Shr 8) And &hFF
 #Define B 	(gpu.command_Buffer(0) Shr 16) And &hFF
-#Define x1 	CShort(gpu.command_Buffer(1) And &h7FF)
-#Define y1 	CShort((gpu.command_Buffer(1) Shr 16) And &h7FF)
-#Define x2 	CShort(gpu.command_Buffer(2) And &h7FF)
-#Define y2 	CShort((gpu.command_Buffer(2) Shr 16) And &h7FF)
-#Define x3 	CShort(gpu.command_Buffer(3) And &h7FF)
-#Define y3 	CShort((gpu.command_Buffer(3) Shr 16) And &h7FF)
-#Define x4	CShort(gpu.command_Buffer(4) And &h7FF)
-#Define y4	CShort((gpu.command_Buffer(5) Shr 16) And &h7FF)
+
+#Define x0 	(gpu.command_Buffer(1) And &hFFFF)
+#Define y0 	((gpu.command_Buffer(1) Shr 16) And &hFFFF)
+
+#Define x1 	(gpu.command_Buffer(2) And &hFFFF)
+#Define y1 	((gpu.command_Buffer(2) Shr 16) And &hFFFF)
+
+#Define x2 	(gpu.command_Buffer(3) And &hFFFF)
+#Define y2 	((gpu.command_Buffer(3) Shr 16) And &hFFFF)
+
+#Define x3	(gpu.command_Buffer(4) And &hFFFF)
+#Define y3	((gpu.command_Buffer(4) Shr 16) And &hFFFF)
 
 
 Declare Function gpuCommand(ByVal port As UShort)As UByte
@@ -76,8 +81,12 @@ Function gp1Command(ByVal dat As UInteger) As UByte 'GP1
 	Return 0
 End Function
 Function gpuCommand(ByVal port As Ushort)As ubyte 'GP0
-
-	Select Case gpu.command_Buffer(0)
+	Cls 
+	Print "Buffer entry: " & Hex(gpu.command_Buffer(0))
+	Dim As UInteger entry = ((gpu.command_Buffer(0) Shr 24) And &hFF)
+	sleep
+	Select Case entry
+		
 		Case &h00
 			'NOP
 		Case &h01
@@ -149,11 +158,26 @@ Sub textTri
 	EndIf
 End Sub
 Sub monoQuad
-	If gpu.command_Count = 4 Then 
-		'Draw
-	Else 
-		gpu.command_Count += 1
-	EndIf
+	Cls
+	Print "Drawing Quad"
+	Print "Color: " & Hex(R) & ":" & Hex(G) & ":" & Hex(B)
+	Print "XY0: " & Hex(x0) & ":" & Hex(y0) & "      " & Hex(gpu.command_Buffer(1)) 
+	Print "XY0: " & Hex(x1) & ":" & Hex(y1) & "      " & Hex(gpu.command_Buffer(2)) 
+	Print "XY0: " & Hex(x2) & ":" & Hex(y2) & "      " & Hex(gpu.command_Buffer(3))
+	Print "XY0: " & Hex(x3) & ":" & Hex(y3) & "      " & Hex(gpu.command_Buffer(4)) 
+	Sleep
+	Cls
+	sleep
+	line(x0, y0)-(x1,y1), RGB(255,255,255)
+	sleep
+	line(x2, y2)-(x3,y3), RGB(255,255,255)
+	Sleep
+	line(x0, y0)-(x2,y2), RGB(255,255,255)
+	Sleep
+	line(x1, y1)-(x3,y3), RGB(255,255,255)
+	Paint(x3/2, y3/2), RGB(255,255,255),RGB(255,255,255)
+	Sleep
+	
 End Sub
 Sub textQuad
 	If gpu.command_Count = 8 Then 

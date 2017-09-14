@@ -99,6 +99,7 @@ Sub CPU_ADDU
 End Sub
 Sub CPU_AND
 	cpu.GPR(RD) = cpu.GPR(RS) And cpu.GPR(RT)
+	Print #99, Hex(cpu.GPR(RS)) & ":" & Hex(cpu.GPR(RT)) & ":" & Hex(cpu.GPR(RD))
 End Sub
 Sub CPU_ANDI
 	cpu.GPR(RT)= cpu.GPR(RS) And imm

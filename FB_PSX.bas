@@ -110,7 +110,7 @@ End Sub
 '''''''''''''''''''''''''''''''''''''''
 loadBIOS 
 initCPU
-ScreenRes 640, 480, 32,
+ScreenRes 900, 900, 32,
 
 
 
@@ -128,15 +128,16 @@ Cls
 'Main loop
 Do 
 runCPU
+If cpu.instructions > 10000000 Then 
 #Ifdef debug
-writeLog
+'writeLog
 #EndIf
-
+endif
 
 cpu.GPR(0) = 0 'Keep Zero Register clean. 
 cpu.instructions += 1
 gpu.GPUSTAT Or= &hC000000
-If cpu.instructions > 20000000 Then CAE
+If cpu.instructions > 15500000 Then CAE
 If cpu.instructions Mod &hFFFF = 0 Then Print "Instructions Executed " &  cpu.instructions
 Loop While Not MultiKey(SC_ESCAPE)
 

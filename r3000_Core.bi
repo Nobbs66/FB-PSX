@@ -30,7 +30,7 @@ Open "writes.txt" For Output As #88
 
 Dim Shared cop0 As cop0s
 Dim Shared port As ports
-Dim Shared As UInteger logWrites = 0, logfile = 0, splitLog = 10000000
+Dim Shared As UInteger logWrites = 0, logfile = 1, splitLog = 10000000
 #Define RD  	((cpu.opcode Shr 11) And &h1F)
 #Define RT  	((cpu.opcode Shr 16) And &h1F)
 #Define RS  	((cpu.opcode Shr 21) And &h1F)
@@ -261,7 +261,7 @@ Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &h1810	To &h1813'GP0
 			If addr = &h1810 Then temp = 0 
-			Print #99, "GP1 Command: " & value
+			Print #99, "GP0 Command: " & value
 			temp or= value Shl ((addr And &h3) * 8)
 			Print #99, "Command: " & Hex(temp)
 			'gpuCommand(&h1810)
@@ -271,7 +271,7 @@ Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 			Print #99, "GP1 Command: " & value
 			temp or= value Shl ((addr And &h3) * 8)
 			Print #99, "Command: " & Hex(temp)
-			If addr = &h1817 Then gp1Command(temp)
+			'If addr = &h1817 Then gp1Command(temp)
 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &h1820 To &h1828 'MDEC
 		Case &hC000 To &h1FFF 'SPU
@@ -354,7 +354,10 @@ Function ReadIO(ByVal addr As UInteger) As ubyte
 		Case &h1F8010A4 To &h1F8010A7
 			value = ((DMA2.block_control Shr(8*addr And 3))) And &hFF
 		Case &h1F8010A8 To &h1F8010AB
-			value = ((DMA2.channel_control Shr(8*addr And 3))) And &hFF
+			value = ((DMA2.channel_control Shr(24 - ((addr And &h3) * 8))) And &hFF)
+			
+			'value = ((DMA2.channel_control Shr (24 - ((addr - &h1f8010a0)*8))) And &hFF)
+			Print #99, hex(DMA2.channel_control)
 		'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 		Case &h1F8010B0 To &h1F8010B3
 			value = ((DMA3.base_address Shr(8*addr And 3))) And &hFF
@@ -412,6 +415,8 @@ Function ReadByte(ByVal addr As UInteger) As UInteger
 			value = cpu.bios(addr and &h7FFFF)
 		Case &h1F000000 To &h1F7FFFFF 'Expansion Port
 			value = cpu.expansion(addr And &h7FFFFF)
+		Case &h1F8010A8 To &h1F8010AB
+			value = ((DMA2.channel_control Shr((addr And 3)*8)) And &hFF)
 		Case &h1F8010F0 To &h1F8010F3
 			value = (dma_Interrupt Shr ((addr And 3)*8) And &hFF)
 			Print #99, "Reading DMA Control"
