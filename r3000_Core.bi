@@ -157,12 +157,12 @@ Function writeIO(ByVal addr As UInteger, ByVal value As UByte) As UInteger
 			checkTrigger(1)
 		''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''			
 		Case &h10A0 To &h10A3 'DMA2 Registers
-			If addr And &h3 = 0 Then DMA2.base_address = 0
+			If addr = &h10A0 Then DMA2.base_address = 0
 			DMA2.base_address Or=value Shl((addr And &h3)*8)
 			Print #99, "Set DMA2 Base Address" 
-			If (addr And 3) = 3 Then Print #99, Hex(DMA2.base_address)
+			Print #99, Hex(DMA2.base_address)
 		Case &h10A4 To &h10A7
-			If addr And &h3 = 0 Then DMA2.block_control = 0
+			If addr = &h10A4 Then DMA2.block_control = 0
 			DMA2.block_control Or=value Shl((addr And &h3)*8)
 			Print #99, Hex(DMA2.block_control)
 			Print #99, "Set DMA2 Block Control"

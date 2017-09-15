@@ -22,6 +22,7 @@ Declare Function read8(ByVal addr As UInteger) As UByte
 Declare Sub blockDMA
 Declare Sub chopDMA
 Declare Sub linkDMA
+Declare Sub linkedDMA
 
 Type DMAs0
 	base_address As UInteger
@@ -172,6 +173,7 @@ Function checkTrigger(ByVal ch As UByte)As UByte
 		Case 2
 			channel = DMA2.channel_control
 			Print #99, "Trigger Bit: " & Hex(start)
+			Print #99, "Start ADDR: " & Hex(DMA2.base_address)
 			If start = 1 Then startDMA(2)
 			DMA2.channel_control = BitReset(DMA2.channel_control,24)
 		Case 3
@@ -264,7 +266,13 @@ Print #99, Hex(header)
 	header = (read32(addr and &h1FFFFF) And &hFFFFFF)
 	MSB = ((read32(addr) Shr 24) and &hFF)
 	loop while header <> &hFFFFFF
+	'Cls 
+	'Print "Code: " & Hex(header)
+	'sleep
 endif
 print #99, "DMA Complete"
 
 end Sub
+
+
+

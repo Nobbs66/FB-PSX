@@ -17,13 +17,29 @@ Dim Shared gpu As gpus
 #Define y0 	((gpu.command_Buffer(1) Shr 16) And &hFFFF)
 
 #Define x1 	(gpu.command_Buffer(2) And &hFFFF)
-#Define y1 	((gpu.command_Buffer(2) Shr 16) And &hFFFF)
+#Define y1 	((gpu.command_Buffer(2) Shr 16) And &hFFFF)'''''''
 
 #Define x2 	(gpu.command_Buffer(3) And &hFFFF)
 #Define y2 	((gpu.command_Buffer(3) Shr 16) And &hFFFF)
 
 #Define x3	(gpu.command_Buffer(4) And &hFFFF)
-#Define y3	((gpu.command_Buffer(4) Shr 16) And &hFFFF)
+#Define y3	((gpu.command_Buffer(4) Shr 16) And &hFFFF) '''''''''
+
+
+#Define x4	(gpu.command_Buffer(5) And &hFFFF)
+#Define y4	((gpu.command_Buffer(5) Shr 16) And &hFFFF)
+
+#Define x5	(gpu.command_Buffer(6) And &hFFFF)
+#Define y5	((gpu.command_Buffer(6) Shr 16) And &hFFFF)'''''''''''''
+
+#Define x6	(gpu.command_Buffer(7) And &hFFFF)
+#Define y6	((gpu.command_Buffer(7) Shr 16) And &hFFFF)
+
+#Define x7	(gpu.command_Buffer(8) And &hFFFF)
+#Define y7	((gpu.command_Buffer(8) Shr 16) And &hFFFF)'''''''''''''
+
+
+
 
 
 Declare Function gpuCommand(ByVal port As UShort)As UByte
@@ -81,10 +97,10 @@ Function gp1Command(ByVal dat As UInteger) As UByte 'GP1
 	Return 0
 End Function
 Function gpuCommand(ByVal port As Ushort)As ubyte 'GP0
-	Cls 
-	Print "Buffer entry: " & Hex(gpu.command_Buffer(0))
+	
+	'Print "Buffer entry: " & Hex(gpu.command_Buffer(0))
 	Dim As UInteger entry = ((gpu.command_Buffer(0) Shr 24) And &hFF)
-	sleep
+'	sleep
 	Select Case entry
 		
 		Case &h00
@@ -139,6 +155,10 @@ Function gpuCommand(ByVal port As Ushort)As ubyte 'GP0
 			'Copy Rect C-V
 		Case &hC0
 			'Copy Rect V-C
+		Case &he3 'set draw area
+			'Ignore for now and move on
+		Case &he4 'Set draw area
+			'ignore and move on
 	End Select
 	Return 0
 End Function
@@ -158,40 +178,45 @@ Sub textTri
 	EndIf
 End Sub
 Sub monoQuad
-	Cls
-	Print "Drawing Quad"
-	Print "Color: " & Hex(R) & ":" & Hex(G) & ":" & Hex(B)
-	Print "XY0: " & Hex(x0) & ":" & Hex(y0) & "      " & Hex(gpu.command_Buffer(1)) 
-	Print "XY0: " & Hex(x1) & ":" & Hex(y1) & "      " & Hex(gpu.command_Buffer(2)) 
-	Print "XY0: " & Hex(x2) & ":" & Hex(y2) & "      " & Hex(gpu.command_Buffer(3))
-	Print "XY0: " & Hex(x3) & ":" & Hex(y3) & "      " & Hex(gpu.command_Buffer(4)) 
-	Sleep
-	Cls
-	sleep
-	line(x0, y0)-(x1,y1), RGB(255,255,255)
-	sleep
-	line(x2, y2)-(x3,y3), RGB(255,255,255)
-	Sleep
-	line(x0, y0)-(x2,y2), RGB(255,255,255)
-	Sleep
-	line(x1, y1)-(x3,y3), RGB(255,255,255)
-	Paint(x3/2, y3/2), RGB(255,255,255),RGB(255,255,255)
-	Sleep
+	'Print "Drawing Quad"
+	'Print "Color: " & Hex(R) & ":" & Hex(G) & ":" & Hex(B)
+	'Print "XY0: " & Hex(x0) & ":" & Hex(y0) & "      " & Hex(gpu.command_Buffer(1)) 
+	'Print "XY0: " & Hex(x1) & ":" & Hex(y1) & "      " & Hex(gpu.command_Buffer(2)) 
+	'Print "XY0: " & Hex(x2) & ":" & Hex(y2) & "      " & Hex(gpu.command_Buffer(3))
+	'Print "XY0: " & Hex(x3) & ":" & Hex(y3) & "      " & Hex(gpu.command_Buffer(4)) 
+	'Sleep
+	
+	'sleep
+	line(x0, y0)-(x1,y1), RGB(R,G,B)
+	'sleep
+	line(x2, y2)-(x3,y3), RGB(R,G,B)
+	'Sleep
+	line(x0, y0)-(x2,y2), RGB(R,G,B)
+	'Sleep
+	line(x1, y1)-(x3,y3), RGB(R,G,B)
+	Paint(x3/2, y3/2), RGB(R,G,B),RGB(255,255,255)
+	'Sleep
 	
 End Sub
 Sub textQuad
-	If gpu.command_Count = 8 Then 
-		'Draw
-	Else 
-		gpu.command_Count += 1
-	EndIf
+Line(x0,y0)-(x2,y2), RGB(200,0,0)
+Line(x4,y4)-(x6,y6), RGB(200,0,0)
+line(x0,y0)-(x4,y4), RGB(200,0,0)
+Line(x2,y2)-(x6,y6), RGB(200,0,0)
+Paint((x2-x0)/2,(x4-x0)/2), RGB(255,0,0)
 End Sub
 Sub gradTri
-	If gpu.command_Count = 5 Then 
-		'Draw
-	Else 
-		gpu.command_Count += 1
-	EndIf
+'Print Hex(x0) & ":" & Hex(y0)
+'Print Hex(x2) & ":" & Hex(y2)
+'Print Hex(x4) & ":" & Hex(y4)
+
+Line(x0,y0)-(x2,y2), rgb(239, 71, 0)
+Line(x2,y2)-(x4,y4), rgb(239, 71, 0)
+Line(x0,y0)-(x4,y4), rgb(239, 71, 0)
+Dim As UInteger tempx = (x0 + x2 + x4)/3
+Dim As UInteger tempy = (y0 + y2 + y4)/3
+Paint(tempx,tempy), rgb(239, 71, 0)
+'Sleep
 End Sub
 Sub gradTexTri
 	If gpu.command_Count = 5 Then 
@@ -201,11 +226,17 @@ Sub gradTexTri
 	EndIf
 End Sub
 Sub gradQuad
-	If gpu.command_Count = 8 Then 
-		'Draw
-	Else 
-		gpu.command_Count += 1
-	EndIf
+'Print Hex(x0) & ":" & Hex(y0)
+'Print Hex(x2) & ":" & Hex(y2)
+'Print Hex(x4) & ":" & Hex(y4)
+'Print Hex(x6) & ":" & Hex(y6)
+Line(x0,y0)-(x2,y2), rgb(239, 192, 0)
+
+line(x4,y4)-(x6,y6), rgb(239, 192, 0)
+
+line(x0,y0)-(x4,y4), rgb(239, 192, 0)
+Line(x2,y2)-(x6,y6), rgb(239, 192, 0)
+Paint(640/2, 480/2), rgb(239, 192, 0)
 End Sub
 Sub gradTexQuad
 	If gpu.command_Count = 7 Then 
