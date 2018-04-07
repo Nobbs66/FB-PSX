@@ -1,5 +1,4 @@
 'ALU Operations
-Declare Sub RFE
 Declare Sub CPU_ADD
 Declare Sub CPU_ADDI
 Declare Sub CPU_ADDIU
@@ -75,178 +74,182 @@ Declare Sub CPU_MFC2 'MFCz
 Declare Sub CPU_MTC0 'MTCz
 Declare Sub CPU_MTC2 'MTCz
 Declare Sub CPU_SWC2
+Declare Sub CPU_NULL 
 Declare Sub decode_instruction
-
-Sub CPU_RFE
-	Dim As uInteger temp = SR And &hFFFFFFC0
-	temp Or= ((SR And &h3C) Shr 2)
-	SR = temp
+Dim Shared SPECIAL(0 To 63) As Sub() => _
+{	@CPU_SLL , @CPU_NULL , @CPU_SRL , @CPU_SRA , @CPU_SLLV   , @CPU_NULL , @CPU_SRLV, @CPU_SRAV,_
+	@CPU_JR  , @CPU_JALR , @CPU_NULL, @CPU_NULL, @CPU_SYSCALL, @CPU_BREAK, @CPU_NULL, @CPU_NULL,_
+	@CPU_MFHI, @CPU_MTHI , @CPU_MFLO, @CPU_MTLO, @CPU_NULL   , @CPU_NULL , @CPU_NULL, @CPU_NULL,_
+	@CPU_MULT, @CPU_MULTU, @CPU_DIV , @CPU_DIVU, @CPU_NULL   , @CPU_NULL , @CPU_NULL, @CPU_NULL,_
+	@CPU_ADD , @CPU_ADDU , @CPU_SUB , @CPU_SUBU, @CPU_AND    , @CPU_OR   , @CPU_XOR , @CPU_NOR ,_
+	@CPU_NULL, @CPU_NULL , @CPU_SLT , @CPU_SLTU, @CPU_NULL   , @CPU_NULL , @CPU_NULL, @CPU_NULL,_
+	@CPU_NULL, @CPU_NULL , @CPU_NULL, @CPU_NULL, @CPU_NULL   , @CPU_NULL , @CPU_NULL, @CPU_NULL,_
+	@CPU_NULL, @CPU_NULL , @CPU_NULL, @CPU_NULL, @CPU_NULL   , @CPU_NULL , @CPU_NULL, @CPU_NULL} 
+Dim Shared REGIMM(0 To 31) As Sub () => _
+{	@CPU_BLTZ  , @CPU_BGEZ  , @CPU_NULL, @CPU_NULL, @CPU_NULL, @CPU_NULL, @CPU_NULL, @CPU_NULL,_
+	@CPU_NULL  , @CPU_NULL  , @CPU_NULL, @CPU_NULL, @CPU_NULL, @CPU_NULL, @CPU_NULL, @CPU_NULL,_
+	@CPU_BLTZAL, @CPU_BGEZAL, @CPU_NULL, @CPU_NULL, @CPU_NULL, @CPU_NULL, @CPU_NULL, @CPU_NULL,_
+	@CPU_NULL  , @CPU_NULL  , @CPU_NULL, @CPU_NULL, @CPU_NULL, @CPU_NULL, @CPU_NULL, @CPU_NULL}
+Dim Shared BASIC(0 To 63) As Sub () => _
+{	@CPU_NULL   , @CPU_NULL	 , @CPU_JMP   , @CPU_JAL  , @CPU_BEQ , @CPU_BNE , @CPU_BLEZ, @CPU_BGTZ,_
+	@CPU_ADDI   , @CPU_ADDIU , @CPU_SLTI, @CPU_SLTIU, @CPU_ANDI, @CPU_ORI , @CPU_XORI, @CPU_LUI ,_
+	@CPU_COP0   , @CPU_NULL  , @CPU_COP2, @CPU_NULL , @CPU_NULL, @CPU_NULL, @CPU_NULL, @CPU_NULL,_
+	@CPU_NULL   , @CPU_NULL  , @CPU_NULL, @CPU_NULL , @CPU_NULL, @CPU_NULL, @CPU_NULL, @CPU_NULL,_
+	@CPU_LB     , @CPU_LH    , @CPU_LWL , @CPU_LW   , @CPU_LBU , @CPU_LHU , @CPU_LWR , @CPU_NULL,_
+	@CPU_SB     , @CPU_SH    , @CPU_SWL , @CPU_SW   , @CPU_NULL, @CPU_NULL, @CPU_SWR , @CPU_NULL,_
+	@CPU_NULL   , @CPU_NULL  , @CPU_LWC2, @CPU_NULL , @CPU_NULL, @CPU_NULL, @CPU_NULL, @CPU_NULL,_ 
+	@CPU_NULL   , @CPU_NULL  , @CPU_SWC2, @CPU_NULL , @CPU_NULL, @CPU_NULL, @CPU_NULL, @CPU_NULL}
+Sub CPU_NULL
+	Print "Unrecognized CPU Instruction"
 End Sub
 Sub CPU_ADD
+	cpu.Operation = "ADD"
 	cpu.GPR(RD) = (cpu.GPR(RS)) + (cpu.GPR(RT))
 	checkOverflow
 End Sub
 Sub CPU_ADDI
+	cpu.Operation = "ADDI"
 	Dim As Integer temp = CShort(imm)
 	cpu.GPR(RT) = cpu.GPR(RS) + temp
 End Sub
 Sub CPU_ADDIU
+	cpu.Operation = "ADDIU"
 	Dim As Integer temp = Cshort(imm)
 	cpu.GPR(RT) = temp + cpu.GPR(RS)
 End Sub
 Sub CPU_ADDU
+	cpu.Operation = "ADDU"
 	cpu.GPR(RD) = cpu.GPR(RS) + cpu.GPR(RT)
 End Sub
 Sub CPU_AND
+	cpu.Operation = "AND"
 	cpu.GPR(RD) = cpu.GPR(RS) And cpu.GPR(RT)
-	Print #99, Hex(cpu.GPR(RS)) & ":" & Hex(cpu.GPR(RT)) & ":" & Hex(cpu.GPR(RD))
 End Sub
 Sub CPU_ANDI
+	cpu.Operation = "ANDI"
 	cpu.GPR(RT)= cpu.GPR(RS) And imm
 End Sub
 Sub CPU_BEQ
+	cpu.Operation = "BEQ"
 	If cpu.GPR(RS) = cpu.GPR(RT) Then 
-		Print #99, "Branch = True"
 		cpu.branch_queued = 2
 		Dim As Short temp = CShort(imm)
 		Dim As Integer bTarget = temp Shl 2
 		cpu.delay_slot_PC = cpu.current_PC + bTarget + 4
-	Else
-		Print #99, "Branch = False"
 	EndIf
-		Print #99, "REGS " & RS & " " & RT
 End Sub
 Sub CPU_BGEZ
+	cpu.Operation = "BEQ"
 	Dim As uinteger test = ((cpu.GPR(RS) And &h80000000)Shr 31)
 	If test = 0 Then 
-		Print #99, "Branch = True"
 		cpu.branch_queued = 2
 		Dim As Short temp = CShort(imm)
 		Dim As Integer bTarget = temp Shl 2
 		cpu.delay_slot_PC = cpu.current_PC + bTarget + 4
-	Else
-		Print #99, "Branch = False"
 	EndIf
 End Sub
 Sub CPU_BGEZAL
+	cpu.Operation = "BGEZAL"
 	Dim As UInteger test = CInt(cpu.GPR(RS))
 	If test >= 0 Then 
-		Print #99, "Branch = True"
 		cpu.branch_queued = 2
 		Dim As Short temp = CShort(imm)
 		Dim As Integer bTarget = temp Shl 2
 		cpu.delay_slot_PC = cpu.current_PC + bTarget + 4
-	Else
-		Print #99, "Branch = False"
 	EndIf
 	cpu.GPR(31) = cpu.current_PC + 8
 End Sub
 Sub CPU_BGTZ
+	cpu.Operation = "BGTZ"
 	Dim As UInteger test = CInt(cpu.GPR(RS))
-	Print #99,  "RS: " & RS & " = " & Hex(cpu.GPR(RS))
 	If test > 0 Then 
-		Print #99, "Branch = True"
 		cpu.branch_queued = 2
 		Dim As Short temp = CShort(imm)
 		Dim As Integer bTarget = temp Shl 2
 		cpu.delay_slot_PC = cpu.current_PC + bTarget + 4
-	
-	Else
-		Print #99, "Branch = False"
 	EndIf
 
 End Sub
 Sub CPU_BLEZ
+	cpu.Operation = "BLEZ"
 	Dim As UByte test = CInt(cpu.GPR(RS))
 	If test <= 0 Then 
-		Print #99, "Branch = True"
 		cpu.branch_queued = 2
 		Dim As Short temp = CShort(imm)
 		Dim As Integer bTarget = temp Shl 2
 		cpu.delay_slot_PC = cpu.current_PC + bTarget + 4
-	Else
-		Print #99, "Branch = False"
 	EndIf
 End Sub
 Sub CPU_BLTZ
+	cpu.Operation = "BLTZ"
 	Dim As UByte test = CInt(cpu.GPR(RS))
 	If test < 0 Then 
-		Print #99, "Branch = True"
 		cpu.branch_queued = 2
 		Dim As Short temp = CShort(imm)
 		Dim As Integer bTarget = temp Shl 2
 		cpu.delay_slot_PC = cpu.current_PC + bTarget + 4
-	Else
-		Print #99, "Branch = False"
 	EndIf
 End Sub
 Sub CPU_BLTZAl
+	cpu.Operation = "BLTZAL"
 	Dim As UByte test = CInt(cpu.GPR(RS))
 	If test < 0 Then 
-		Print #99, "Branch = True"
 		cpu.branch_queued = 2
 		Dim As Short temp = CShort(imm)
 		Dim As Integer bTarget = temp Shl 2
 		cpu.delay_slot_PC = cpu.current_PC + bTarget + 4
-	Else
-		Print #99, "Branch = False"
 	EndIf
 	cpu.GPR(31) = cpu.current_PC + 8
 End Sub
 Sub CPU_BNE
+	cpu.Operation = "BNE"
 	If cpu.GPR(RS) <> cpu.GPR(RT) Then 
-		Print #99, "Branch = True"
 		cpu.branch_queued = 2
 		Dim As Short temp = CShort(imm)
 		Dim As Integer bTarget = temp Shl 2
 		cpu.delay_slot_PC = cpu.current_PC + bTarget + 4
-	Else
-		Print #99, "Branch = False"
 	EndIf
 End Sub
 Sub CPU_BREAK
 	'Breakpoint Exception
-	Exception(0,9,0)
+	Exception(9)
 End Sub
 Sub CPU_CFC2
+	Print "COP2"
 	Dim As UByte temp = ((SR Shr 30) And 1)
 	If temp <> 0 Then 
 		cpu.GPR(RT) = gte.gc(RD)
 	Else 
-		Exception(0,11,0) 'COP2 Unusable 
+		Exception(11) 'COP2 Unusable 
 	EndIf
 End Sub
 Sub CPU_COP0
-Dim As UByte KUc = SR And &h2 'Check for Kernel Mode
-If KUc = 2 Then 
-	Dim As UByte temp = ((SR Shr 28) And 1)
-	If temp <> 0 Then 
-		'Execute Coprocessor Function
-		
-	Else 
-		Exception(0,11,0) 'COP0 Unusable 
-	EndIf
-Else
-	'Execute Coprocessor Function
-endif
+	Select Case (cpu.opcode And &h1ffffff)
+		Case &h10
+			RFE
+	End Select
 End Sub
 Sub CPU_COP2
+	Print "COP2"
 	Dim As UByte temp = ((SR Shr 30) And 1) 
 	If temp <> 0 Then
 		'Execute Coprocessor Function
 	Else
-		Exception(0,11,0) 'COP2 Unusable
+		Exception(11) 'COP2 Unusable
 	EndIf
 End Sub
 Sub CPU_CTC2
+	Print "COP2"
+	
 	Dim As UByte temp = ((SR Shr 30) And 1) 
 	If temp <> 0 Then
 		gte.gc(RD) = cpu.GPR(RT)
 	Else
-		Exception(0,11,0) 'COP2 Unusable
+		Exception(11) 'COP2 Unusable
 	EndIf
 End Sub
 Sub CPU_DIV
+	cpu.Operation = "DIV"
 	If cpu.GPR(RT) <> 0 Then 
 		Dim As Integer dRS = CInt(cpu.GPR(RS))
 		Dim As Integer dRT = CInt(cpu.GPR(RT))
@@ -255,104 +258,83 @@ Sub CPU_DIV
 	EndIf
 End Sub
 Sub CPU_DIVU
+	cpu.Operation = "DIVU"
 	If cpu.GPR(RT) <> 0 Then 
 		cpu.LO = cpu.GPR(RS) / cpu.GPR(RT)
 		cpu.HI = cpu.GPR(RT) Mod cpu.GPR(RT)
 	EndIf 
 End Sub
-Sub CPU_J
+Sub CPU_JMP
+	cpu.Operation = "J"
 	cpu.delay_slot_PC = cpu.current_PC And &hF0000000
 	cpu.delay_slot_PC or= Target 
 	cpu.branch_queued = 2
 End Sub
 Sub CPU_JAL
+	cpu.Operation = "JAL"
 	cpu.GPR(31) = cpu.current_PC + 8
 	cpu.delay_slot_PC = cpu.current_PC And &hF0000000
 	cpu.delay_slot_PC or= Target 
 	cpu.branch_queued = 2
 End Sub
 Sub CPU_JALR
+	cpu.Operation = "JALR"
 	dim as integer temp = cint(cpu.GPR(RS))
 	cpu.GPR(RD) = cpu.current_PC + 8
 	cpu.delay_slot_PC = temp
 	cpu.branch_queued = 2
 End Sub
 Sub CPU_JR
+	cpu.Operation = "JR"
 	Dim As Integer temp = CInt(cpu.GPR(RS))
 	cpu.delay_slot_PC = temp
 	cpu.branch_queued = 2
 End Sub
 Sub CPU_LB
+	cpu.Operation = "LB"
 	Dim As Integer addr = CShort(imm) + cpu.GPR(RS)
 	Dim As Integer value = ReadByte(addr)
 	cpu.GPR(RT) = CByte(value)
 	cpu.fGPR(RT) = 2
-	#Ifdef debug
-	Print #88, "-----------------------------------------------"
-	Print #88, "ADDR: " & Hex(addr) & ":" & Hex(value)
-	Print #88, "LB:" & Hex(cpu.current_PC)
-	Print #88, "Cycles: " & cpu.instructions
-	Print #88, "-----------------------------------------------"
-	#EndIf
+	if (addr shr 24) = &hA0 then cpu.cpu_Cycles += 6
 End Sub
 Sub CPU_LBU
+	cpu.Operation = "LBU"
 	Dim As Integer addr = CShort(imm) + cpu.GPR(RS)
 	cpu.GPR(RT) = ReadByte(addr)
 	cpu.delayFlag = 2
-	#Ifdef debug
-	Print #88, "-----------------------------------------------"
-	Print #88, "LBU:" & Hex(cpu.current_PC)
-	Print #88, "Cycles: " & cpu.instructions
-	Print #88, "-----------------------------------------------"
-	#EndIf
+	if (addr shr 24) = &hA0 then cpu.cpu_Cycles += 6
 End Sub
 Sub CPU_LH
+	cpu.Operation = "LH"
 	Dim As Integer addr = CShort(imm) + cpu.GPR(RS)
 	Dim As Byte test = addr And 1
 	Dim load As integer
 	For i As uInteger = 0 To 1
 	load Or= (ReadByte(addr+i) Shl i*8)
 	Next
-	#Ifdef debug
-	Print #88, "-----------------------------------------------"
-	Print #88, "ADDR: " & Hex(addr) & ":" & Hex(load)
-	Print #88, "LH:" & Hex(cpu.current_PC)
-	Print #88, "Cycles: " & cpu.instructions
-	Print #88, "-----------------------------------------------"
-	#EndIf
 	cpu.GPR(RT) = CShort(load)
 	cpu.fGPR(RT) = 2
+	if (addr shr 24) = &hA0 then cpu.cpu_Cycles += 6
 End Sub
 Sub CPU_LHU
+	cpu.Operation = "LHU"
 	Dim As Integer addr = CShort(imm) + cpu.GPR(RS)
 	Dim As Byte test = addr And 1
 	Dim load As integer
 	For i As uInteger = 0 To 1
 	load Or= (ReadByte(addr+i) Shl i*8)
 	Next
-	#Ifdef debug
-	Print #88, "-----------------------------------------------"
-	Print #88, "ADDR: " & Hex(addr) & ":" & Hex(load)
-	Print #88, "LHU:" & Hex(cpu.current_PC)
-	Print #88, "Cycles: " & cpu.instructions
-	Print #88, "-----------------------------------------------"
-	#EndIf
 	cpu.GPR(RT) = load
 	cpu.fGPR(RT) = 2
 End Sub
 Sub CPU_LUI 
+	cpu.Operation = "LUI"
 	cpu.GPR(RT) = (imm Shl 16)
 	cpu.fGPR(RT) = 2
-	#Ifdef debug
-	Print #88, "-----------------------------------------------"
-	Print #99, Hex(imm Shl 16)
-	Print #99, Hex(cpu.GPR(RT))
-	Print #88, "LUI: " & Hex(cpu.current_PC)
-	Print #88, "Cycles: " & cpu.instructions &  " : " & Hex(imm)
-	Print #88, "-----------------------------------------------"
-	#EndIf
 End Sub
 Sub CPU_LW
+	cpu.Operation = "LW"
 	Dim As Integer addr = CShort(imm) + cpu.GPR(RS)
 	Dim As Byte test = addr And 1
 	cpu.GPR(RT) = 0 
@@ -360,18 +342,12 @@ Sub CPU_LW
 	For i As Integer = 0 To 3
 	load or= (ReadByte(addr+(3-i)) Shl (24-(i*8)))
 	Next
-	#Ifdef debug
-	Print #88, "-----------------------------------------------"
-	Print #88, "ADDR: " & Hex(addr) & ":" & Hex(load)
-	Print #88, "LW:" & Hex(cpu.current_PC)
-	Print #88, cpu.instructions
-	Print #88, "-----------------------------------------------"
-	#EndIf
 	cpu.GPR(RT) = load
 	cpu.fGPR(RT) = 2
-	
+	if (addr shr 24) = &hA0 then cpu.cpu_Cycles += 6
 End Sub
 Sub CPU_LWC2
+	Print "COP2"
 	Dim As UByte temp = ((SR Shr 30) And 1) 
 	If temp <> 0 Then 
 		Dim As Integer temp = Offset 
@@ -384,75 +360,82 @@ Sub CPU_LWC2
 		Next
 		gte.gd(RT) = load	
 	Else 
-		Exception(0,11,0) 'COP2 Unusable 
+		Exception(11) 'COP2 Unusable 
 	EndIf
 End Sub
 
 Sub CPU_LWL
-	#Ifdef debug
-	Print #99, "Unimplemented Op: LWL" 
-	#EndIf
+	'print #99, "Unimplemented Op: LWL" 
+	Print "LWL"
 End Sub
 Sub CPU_LWR
-	#Ifdef debug
-	Print #99, "Unimplemented Op: LWR"
-	#EndIf
+	'print #99, "Unimplemented Op: LWR"
+	Print "LWR"
 End Sub
-Sub CPU_MFC0	
-Dim As UByte KUc = SR And &h2 'Check for Kernel Mode
-If  KUC = 2 Then 
-	Dim As UByte temp = ((SR Shr 28) And 1) 
-	If temp <> 0 Then 
-		cpu.GPR(RT) = cop0.reg(RD)
+Sub CPU_MFC0
+	cpu.Operation = "MFCO"
+	Dim As UByte KUc = SR And &h2 'Check for Kernel Mode
+	If  KUC = 2 Then 
+		Dim As UByte temp = ((SR Shr 28) And 1) 
+		If temp <> 0 Then 
+			cpu.GPR(RT) = cop0.reg(RD)
+		Else 
+			Exception(11) 'COP0 Unusable 
+		EndIf
 	Else 
-		Exception(0,11,0) 'COP0 Unusable 
+		cpu.GPR(RT) = cop0.reg(RD)
 	EndIf
-Else 
-	cpu.GPR(RT) = cop0.reg(RD)
-endif
 End Sub
 Sub CPU_MFC2
+	Print "COP2"
 	Dim As UByte temp = ((SR Shr 30) And 1) 
 	If temp <> 0 Then 
 		cpu.GPR(RT) = gte.gd(RD)	
 	Else 
-		Exception(0,11,0) 'COP2 Unusable 
+		Exception(11) 'COP2 Unusable 
 	EndIf
 End Sub
 Sub CPU_MFHI
+	cpu.Operation = "MFHI"
 	cpu.GPR(RD) = cpu.HI
 End Sub
 
 Sub CPU_MFLO
+	cpu.Operation = "MFLO"
 	cpu.GPR(RD) = cpu.LO
 End Sub
 Sub CPU_MTC0
-Dim As UByte KUc = SR And &h2 'Check for Kernel Mode
-If KUc = 2 Then 
+	cpu.Operation = "MTCO"
+	Dim As UByte KUc = SR And &h2 'Check for Kernel Mode
+	If KUc = 2 Then 
 		Dim As UByte temp = ((SR Shr 28) And 1)
 		If temp <> 0 Then 
 		Else 
-			Exception(0,11,0) 'COP0 Unusable 
+			Exception(11) 'COP0 Unusable 
 		EndIf
-Else
-	cop0.reg(RD) = cpu.GPR(RT)
-endif		
+	Else
+		cop0.reg(RD) = cpu.GPR(RT)
+	EndIf		
 End Sub
 Sub CPU_MTC2
+	Print "COP2"
 	Dim As UByte temp = ((SR Shr 30) And 1) 
 	If temp <> 0 Then 
 		gte.gd(RD) = cpu.GPR(RT)	
 	Else 
-		Exception(0,11,0) 'COP2 Unusable 
+		Exception(11) 'COP2 Unusable 
 	EndIf
 End Sub
 Sub CPU_MTHI
+	cpu.Operation = "MTHI"
 	cpu.HI = cpu.GPR(RS)
 End Sub
 Sub CPU_MTLO
+	cpu.Operation = "MTLO"
 	cpu.LO = cpu.GPR(RS)
 End Sub
 Sub CPU_MULT
+	cpu.Operation = "MULT"
 	Dim As Integer mRS = CInt(cpu.GPR(RS))
 	Dim As Integer mRT = CInt(cpu.GPR(RT))
 	Dim As ULongInt result = mRS * mRT
@@ -460,101 +443,98 @@ Sub CPU_MULT
 	cpu.HI = (result Shr 32) And &hFFFFFFFF 
 End Sub
 Sub CPU_MULTU
+	cpu.Operation = "MULTU"
 	dim as ulongint result = cpu.GPR(RS) * cpu.GPR(RT)
 	cpu.LO = result And &hFFFFFFFF
 	cpu.HI = (result Shr 32) And &hFFFFFFFF 
 End Sub
-Sub CPU_NOR 'Maybe correct????
-	Dim As UInteger tRD = (RD xor &hFFFFFFFF)
-	Dim As UInteger tRT = (RT Xor &hFFFFFFFF)
-	Dim As UInteger tRS = (RS Xor &hFFFFFFFF)
-	cpu.GPR(RD) = cpu.GPR(tRS) Or cpu.GPR(tRT)
+Sub CPU_NOR
+	cpu.Operation = "NOR"
+	cpu.GPR(rd) = Not(cpu.GPR(rs) Or cpu.GPR(rt))
 End Sub
 Sub CPU_OR
+	cpu.Operation = "OR"
 	cpu.GPR(RD) = cpu.GPR(RS) Or cpu.GPR(RT)
 End Sub
 Sub CPU_ORI
+	cpu.Operation = "ORI"
 	cpu.GPR(RT)= cpu.GPR(RS) + imm
 End Sub
-
 Sub CPU_SB
+	cpu.Operation = "SB"
 	Dim As Integer addr = CShort(imm) + cpu.GPR(RS)
 	Dim As Integer value = cpu.GPR(RT) And &hFF
 	WriteByte(addr,value)
-	#Ifdef debug6
-	Print #88, "addr: " & Hex(addr) & ":" & "value: " & Hex(value)
-	Print #88, "SB" & Hex(cpu.current_PC)
-	Print #88, "Cycles: " & cpu.instructions
-	#endif
+	If (addr shr 24) = &hA0 then cpu.cpu_Cycles += 6
 End Sub
 
 Sub CPU_SH
-	'I'm not confident with this one
+	cpu.Operation = "SH"
 	Dim As Integer addr = CShort(imm) + cpu.GPR(RS)
 	Dim load As Byte
 	For i As Integer = 0 To 1
 		load = ((cpu.GPR(RT) Shr i*8) And &hFF)
 		WriteByte(addr+i,load)
-		Print #88, "ADDR: " & Hex(addr + i) & ":" & Hex(load)
-		
 	Next
-	#Ifdef debug
-	Print #88, "-----------------------------------------------"
-	Print #88, "SH" & Hex(cpu.current_PC)
-	Print #88, "Cycles: " & cpu.instructions
-	Print #88, "-----------------------------------------------"
-	#EndIf
+	if (addr shr 24) = &hA0 then cpu.cpu_Cycles += 6
 End Sub
 Sub CPU_SLL
+	cpu.Operation = "SLL"
 	cpu.GPR(RD) = cpu.GPR(RT) Shl SA
-	#Ifdef debug
-	Print #99, Hex(cpu.GPR(RD)) & ":" & Hex(cpu.GPR(RT)) & ":" & Hex(SA)
-	#EndIf
 End Sub
 Sub CPU_SLLV
+	cpu.Operation = "SLLV"
 	cpu.GPR(RD) = cpu.GPR(RT) Shl  (cpu.GPR(RS) And &h1F)
 End Sub
 Sub CPU_SLT
+	cpu.Operation = "SLT"
 	Dim As Integer tRS = CInt(cpu.GPR(RS))
 	Dim As Integer tRT = CInt(cpu.GPR(RT))
 	If tRS < tRT Then cpu.GPR(RD) = 1 Else cpu.GPR(RD) = 0
 End Sub
 Sub CPU_SLTI
+	cpu.Operation = "SLTI"
 	Dim As Integer tImm = CShort(imm)
 	Dim As Integer tRS = CInt(cpu.GPR(RS))
 	If tRS < tImm Then cpu.GPR(RT) = 1 Else cpu.GPR(RT) = 0
 End Sub
-Sub CPU_SLTIU 'Might be correct without sign extension?
+Sub CPU_SLTIU
+	cpu.Operation = "SLTIU"
 	If cpu.GPR(RS) < CShort(imm) Then cpu.GPR(RT) = 1 Else cpu.GPR(RT) = 0
 End Sub
 Sub CPU_SLTU
-	Print #99, Hex(cpu.GPR(RS)) & ":" & Hex(cpu.GPR(RT))
+	cpu.Operation = "SLTU"
 	If cpu.GPR(RS) < cpu.GPR(RT) Then cpu.GPR(RD) = 1 Else cpu.GPR(RD) = 0
 End Sub
 Sub CPU_SRA
+	cpu.Operation = "SRA"
 	Dim As Integer temp = cpu.GPR(RT) Shr SA
 	cpu.GPR(RD) = temp
 End Sub
 Sub CPU_SRAV
+	cpu.Operation = "SRAV"
 	Dim As Integer temp = cpu.GPR(RT) Shr  cpu.GPR(RS)
 	cpu.GPR(RD) = temp
 End Sub
 Sub CPU_SRL
+	cpu.Operation = "SRL"
 	cpu.GPR(RD) = cpu.GPR(RT) Shr SA
 End Sub
 Sub CPU_SRLV
+	cpu.Operation = "SRLV"
 	cpu.GPR(RD) = cpu.GPR(RT) Shr  cpu.GPR(RS)
 End Sub
 Sub CPU_SUB
+	cpu.Operation = "SUB"
 	cpu.GPR(RD) = cpu.GPR(RS) - cpu.GPR(RT)
 	checkOverflow
 End Sub
 Sub CPU_SUBU
+	cpu.Operation = "SUBU"
 	cpu.GPR(RD) = cpu.GPR(RS) - cpu.GPR(RT)
 End Sub
-
 Sub CPU_SW
-	'I'm not confident with this one
+	cpu.Operation = "SW"
 	Dim As UInteger addr = cpu.GPR(RS) + Cshort(imm)
 	Dim As Byte test = addr And 1
 	Dim load As Byte
@@ -563,36 +543,24 @@ Sub CPU_SW
 		WriteByte(addr+i,load)
 		cpu.storeValue = load 
 	Next
-	#Ifdef debug
-	Print #88, "-----------------------------------------------"
-	Print #88, "Address: " & Hex(addr) & " = " & Hex(load)
-	Print #88, "RT   " & RT & ": " & Hex(cpu.GPR(RT))
-	Print #88, "SW   " & Hex(cpu.current_PC)
-	Print #88, "Cycles: " & cpu.instructions
-	Print #88, "-----------------------------------------------"
-	#EndIf
+	if (addr shr 24) = &hA0 then cpu.cpu_Cycles += 6
 End Sub
 
 Sub CPU_SWC2
-	#Ifdef debug
-	Print #99, "Unimplemented Op"
-	#EndIf
+	Print "COP2"
+	'print #99, "Unimplemented Op"
 End Sub
 
 Sub CPU_SWL
-	#Ifdef debug
-	Print #99, "Unimplemented Op"
-	#EndIf
+	'print #99, "Unimplemented Op"
 End Sub
 
 Sub CPU_SWR
-	#Ifdef debug
-	Print #99, "Unimplemented Op"
-	#EndIf
+	'print #99, "Unimplemented Op"
 End Sub
 Sub CPU_SYSCALL
 	Dim As UInteger code = ((cpu.opcode Shr 6) And &hFFFFF)
-	Exception(code,8,0)
+	Exception(8)
 End Sub
 Sub CPU_XOR
 	cpu.GPR(RD) = cpu.GPR(RS) Xor cpu.GPR(RT)
@@ -601,7 +569,6 @@ Sub CPU_XORI
 	cpu.GPR(RT)= cpu.GPR(RS) xor imm
 End Sub
 Sub decodeInstruction
-	'If cpu.opcode <> 0 Then 
 	Select Case (cpu.opcode Shr 21)
 		Case &h242 'CFZ0
 			cpu.Operation = "CFC2"
@@ -623,210 +590,13 @@ Sub decodeInstruction
 			CPU_MFC2
 		Case Else
 	End Select
-	Select Case (cpu.opcode Shr 25)
-        Case &h21
-            Dim As Uinteger temp = cpu.opcode
-            temp = temp Shl 26
-            temp = temp Shr 26
-            If temp = &h10 Then 
-                cpu.Operation = "RFE" 
-                CPU_RFE 
-            Else 
-                cpu.Operation = "COP0"
-                CPU_COP0
-            EndIf
-		Case &h25
-			cpu.Operation = "COP2"
-			CPU_COP2
-	End Select
 	Select Case (cpu.opcode Shr 26)
 		Case &h0 'Special
-			Select Case(cpu.opcode And &h3F)
-				Case &h0
-					cpu.operation = "SLL"
-					CPU_SLL
-				Case &h2
-					cpu.operation = "SRL"
-					CPU_SRL
-				Case &h3
-					cpu.operation = "SRA"
-					CPU_SRA
-				Case &h4
-					cpu.operation = "SLLV"
-					CPU_SLLV
-				Case &h6
-					cpu.operation = "SRLV"
-					CPU_SRLV
-				Case &h7
-					cpu.operation = "SRAV"
-					CPU_SRAV
-				Case &hc
-					cpu.operation = "SYSCALL"
-					CPU_SYSCALL
-				Case &h20
-					cpu.Operation = "ADD"
-					CPU_ADD
-				Case &h21
-					cpu.Operation = "ADDU"
-					CPU_ADDU
-				Case &h24
-					cpu.Operation = "AND"
-					CPU_AND
-				Case &h0D
-					cpu.Operation = "BREAK"
-					CPU_BREAK
-				Case &h1A
-					cpu.Operation = "DIV"
-					CPU_DIV
-				Case &h1B
-					cpu.Operation = "DIVU"
-					CPU_DIVU
-				Case &h09
-					cpu.Operation = "JALR"
-					CPU_JALR
-				Case &h08
-					cpu.Operation = "JR"
-					CPU_JR
-				Case &h10
-					cpu.Operation = "MFHI"
-					CPU_MFHI
-				Case &h12
-					cpu.Operation = "MFLO"
-					CPU_MFLO
-				Case &h11
-					cpu.Operation = "MTHI"
-					CPU_MTHI
-				Case &h13
-					cpu.Operation = "MTLO"
-					CPU_MTLO
-				Case &h18
-					cpu.operation = "MULT"
-					CPU_MULT
-				Case &h19
-					cpu.operation = "MULTU"
-					CPU_MULTU
-				Case &h22
-					cpu.operation = "SUB"
-					CPU_SUB
-				Case &H23
-					cpu.operation = "SUBU"
-					CPU_SUBU
-				Case &h25
-					cpu.operation = "OR"
-					CPU_OR
-				Case &h26
-					cpu.operation = "XOR"
-					CPU_XOR
-				Case &h27
-					cpu.operation = "NOR"
-					CPU_NOR
-				Case &h2A
-					cpu.operation = "SLT"
-					CPU_SLT
-				Case &h2B
-					cpu.operation = "SLTU"
-					CPU_SLTU
-			End Select
-		Case &h1 'REGIMM = 000001
-			Select Case ((cpu.opcode Shr 16) And &H1F)
-				Case &h0
-					cpu.operation = "BLTZ"
-					CPU_BLTZ
-				Case &h1
-					cpu.operation = "BGEZ"
-					CPU_BGEZ
-				Case &h10
-					cpu.operation = "BLTZAL"
-					CPU_BLTZAL
-				Case &h11
-					cpu.operation = "BGEZAL"
-					CPU_BGEZAL
-			End Select
-		Case &h2
-			cpu.operation = "J"
-			CPU_J
-		Case &h3
-			cpu.operation = "JAL"
-			CPU_JAL
-		Case &h4
-			cpu.operation = "BEQ"
-			CPU_BEQ
-		Case &h5
-			cpu.operation = "BNE"
-			CPU_BNE
-		Case &h6
-			cpu.operation = "BLEZ"
-			CPU_BLEZ
-		Case &h7
-			cpu.operation = "BGTZ"
-			CPU_BGTZ
-		Case &h8
-			cpu.operation = "ADDI"
-			CPU_ADDI
-		Case &h9
-			cpu.operation = "ADDIU"
-			CPU_ADDIU
-		Case &hA
-			cpu.operation = "SLTI"
-			CPU_SLTI
-		Case &HB
-			cpu.operation = "SLTIU"
-			CPU_SLTIU
-		Case &hc
-			cpu.operation = "ANDI"
-			CPU_ANDI
-		Case &hD
-			cpu.Operation = "ORI"
-			CPU_ORI
-		Case &he
-			cpu.operation = "XORI"
-			CPU_XORI
-		Case &hF
-			cpu.operation  = "LUI"
-			CPU_LUI
-		Case &h20
-			cpu.operation = "LB"
-			CPU_LB
-		Case &H21
-			cpu.operation = "LH"
-			CPU_LH
-		Case &h22
-			cpu.operation = "LWL"
-			CPU_LWL
-		Case &h23
-			cpu.operation = "LW"
-			CPU_LW
-		Case &h24
-			cpu.operation = "LBU"
-			CPU_LBU
-		Case &h25
-			cpu.operation = "LHU"
-			CPU_LHU
-		Case &h26
-			cpu.operation = "LWR"
-			CPU_LWR
-		Case &h28
-			cpu.operation = "SB"
-			CPU_SB
-		Case &h2B
-			cpu.operation = "SW"
-			CPU_SW
-		Case &h29
-			cpu.operation = "SH"
-			CPU_SH
-		Case &h2A
-			cpu.operation = "SWL"
-			CPU_SWL
-		Case &h2e
-			cpu.operation = "SWR"
-			CPU_SWR
-		Case &h32
-			cpu.operation = "LWC2"
-			CPU_LWC2
-		Case &h3A
-			cpu.operation = "SWC2"
-			CPU_SWC2
-		
+			SPECIAL(cpu.opcode And &h3F)()
+		Case &h1 'REGIMM
+			REGIMM((cpu.opcode Shr 16) And &h1F)()
+		Case Else
+			BASIC((cpu.opcode Shr 26)And &h3F)()
 	End Select
 End Sub
 
