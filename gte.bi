@@ -4,27 +4,39 @@ Type gtes
 End Type
 Dim Shared gte As gtes
 'Control Registers
-#Define R11R12 (gte.gc(0))  	'Rotation matrix elements 11, 12
-#Define R13R21 (gte.gc(1)) 	'Rotation matrix elements 13, 21
-#Define R22R23 (gte.gc(2))		'Rotation matrix elements 22, 23
-#Define R31R32 (gte.gc(3))		'Rotation matrix elements 31, 32
-#Define R33		(gte.gc(4))		'Rotation matrix element  33
+#Define R11 ((gte.gc(0)) And &hFFFF)
+#Define R12 (((gte.gc(0) Shr 16) And &hFFFF)
+#Define R13 ((gte.gc(1) And &hFFFF)
+#Define R21 (((gte.gc(1) Shr 16) And &hFFFF)
+#Define R22 ((gte.gc(2) And &hFFFF)
+#Define R23 (((gte.gc(2) Shr 16) And &hFFFF)
+#Define R31 ((gte.gc(3) And &hFFFF)
+#Define R32 (((gte.gc(3) Shr 16) And &hFFFF)
+#Define R33 (gte.gc(4))
 #Define TRX 	(gte.gc(5)) 	'Translation Vector X
 #Define TRY		(gte.gc(6)) 	'Translation Vector Y
 #Define TRZ		(gte.gc(7)) 	'Translation Vector Z
-#Define L11L12 (gte.gc(8)) 	'Light source matrix elements 11, 12
-#Define L13L21	(gte.gc(9))		'Light source matrix elements 13, 21
-#Define L22L23	(gte.gc(10))	'Light source matrix elements 22, 23
-#Define L31L32 (gte.gc(11))	'Light source matrix elements 31, 32
-#Define L33		(gte.gc(12))	'Light source matrix elements 33
+#Define L11 ((gte.gc(8)) And &hFFFF)
+#Define L12 (((gte.gc(8) Shr 16) And &hFFFF)
+#Define L13 ((gte.gc(9) And &hFFFF)
+#Define L21 (((gte.gc(9) Shr 16) And &hFFFF)
+#Define L22 ((gte.gc(10) And &hFFFF)
+#Define L23 (((gte.gc(10) Shr 16) And &hFFFF)
+#Define L31 ((gte.gc(11) And &hFFFF)
+#Define L32 (((gte.gc(11) Shr 16) And &hFFFF)
+#Define L33 (gte.gc(12))
 #Define RBK		(gte.gc(13))	'Background color red component
 #Define GBK		(gte.gc(14)) 	'Background color green component
 #Define BBK		(gte.gc(15))	'Background color blue component
-#Define LR1LR2	(gte.gc(16)) 	'Light color matrix source 1&2 red comp.
-#Define LR3LG1	(gte.gc(17))	'Light color matrix source 3 red, 1 green
-#Define LG2LG3	(gte.gc(18))	'Light color matrix source 2&3 green comp.
-#Define LB1LB2	(gte.gc(19))	'Light color matrix source 1&2 blue comp.
-#Define LB3		(gte.gc(20))	'Light color matrix source 3 blue comp.
+#Define LR1 ((gte.gc(16)) And &hFFFF)
+#Define LR2 (((gte.gc(16) Shr 16) And &hFFFF)
+#Define LR3 ((gte.gc(17) And &hFFFF)
+#Define LG1 (((gte.gc(17) Shr 16) And &hFFFF)
+#Define LG2 ((gte.gc(18) And &hFFFF)
+#Define LG3 (((gte.gc(18) Shr 16) And &hFFFF)
+#Define LB1 ((gte.gc(19) And &hFFFF)
+#Define LB2 (((gte.gc(19) Shr 16) And &hFFFF)
+#Define LB3 (gte.gc(20))
 #Define RFC		(gte.gc(21))	'Far color red component
 #Define GFC		(gte.gc(22))	'Far color green component
 #Define BFC		(gte.gc(23))	'Far color blue component
@@ -70,3 +82,26 @@ Dim Shared gte As gtes
 #Define ORGB	(gte.gd(29))	'*4
 #Define LZCS	(gte.gd(30))	'Leading zero count source data *5
 #Define LZCR	(gte.gd(31))	'Leading zero count result *5
+
+Declare Sub RTPS 'Perspective Transform
+Declare Sub NCLIP
+Declare Sub GTE_Opcode(op As UByte)
+
+Sub RTPS
+	Print "[GTE] RTPS"
+End Sub
+
+Sub NCLIP
+	Print "[GTE] NCLIP"
+End Sub
+
+Sub GTE_Opcode(op As UByte)
+	Select Case op
+		Case &h01
+			RTPS
+		Case &h06
+			NCLIP
+		Case Else
+			Print "Unknown GTE Opcode"
+	End Select
+End Sub

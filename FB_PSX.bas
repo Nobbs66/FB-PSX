@@ -44,6 +44,7 @@ Dim Shared cpu As cpus
 #Include Once "gpu.bi"
 Declare Sub setIntc(ByVal irq As UByte)
 #Include "dma.bi"
+#Include Once "gte.bi"
 #Include Once "r3000_Core.bi"
 #Include Once "r3000_cop0.bi"
 #Include Once "gte.bi"
